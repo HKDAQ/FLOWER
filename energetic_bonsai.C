@@ -19,7 +19,7 @@
 #endif
 
 // low energy reconstruction
-int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
+int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 	//setPlotStyle(); // defined below
 
 	// set up histograms
@@ -37,12 +37,12 @@ int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
 	if (getenv ("WCSIMDIR") !=  NULL) {
 		gSystem->Load("${WCSIMDIR}/libWCSimRoot.so");
 	} else {
-		gSystem->Load("../libWCSimRoot.so");
+		gSystem->Load("../hk-BONSAI/libWCSimRoot.so");
 	}
 	if (getenv ("BONSAIDIR") !=  NULL) {
 		gSystem->Load("${BONSAIDIR}/libWCSimBonsai.so");
 	} else {
-		gSystem->Load("../libWCSimBonsai.so");
+		gSystem->Load("../hk-BONSAI/libWCSimBonsai.so");
 	}
 #endif
 
@@ -92,7 +92,7 @@ int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
 			bsNhit = & ncherenkovdigihits;
 
 			// get time, charge and PMT number for each WCSimRootCherenkovDigiHit in the trigger
-			for (i=0;i<ncherenkovdigihits;i++) {
+			for (int i=0;i<ncherenkovdigihits;i++) {
 				TObject *element = (trigger->GetCherenkovDigiHits())->At(i);
 				WCSimRootCherenkovDigiHit *cherenkovdigihit = dynamic_cast<WCSimRootCherenkovDigiHit*>(element);
 
@@ -110,8 +110,8 @@ int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
 			recPhi->Fill(bsResult[1]);
 			recAlpha->Fill(bsResult[2]);
 			recCherenkov->Fill(bsResult[3]);
-			recEllipticity->Fill(bsResult[4]);
-			recLikelihood->Fill(bsResult[5]);
+			//recEllipticity->Fill(bsResult[4]);
+			//recLikelihood->Fill(bsResult[5]);
 			//recR->Fill(sqrt(pow(bsVertex[0], 2) + pow(bsVertex[1], 2) + pow(bsVertex[2], 2)));
 			//actX->Fill(trigger->GetVtx(0)); // x component of the true vertex position, for comparison
 			//std::cout << "reconstructed direction: " << bsResult[0] << " " << bsResult[1] << " " << bsResult[2] << " " << bsResult[3] << " " << bsResult[4] << " " << bsResult[5] << std::endl;
@@ -123,21 +123,20 @@ int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
 			// For a detailed description of the energy estimation formulas in SK-IV, see ch. 4.3 of
 			// http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
 
-			for (i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
+			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
 
-				// substract time-of-flight from measured arrival time bsT[i]
+				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
 			}
 
 			// look for 50/100 ms interval with maximal number of hits --> start/end time: tMin50, tMax50, …
 
-
 			int n50 = 0; // number of hits in 50 ms interval
-			for (i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
-				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
-					n50++;
-					// for convenience: save distance from vertex, incident angles on PMT, tubeID to separate arrays
-				}
+			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
+//				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
+//					n50++;
+//					// for convenience: save distance from vertex, incident angles on PMT, tubeID to separate arrays
+//				}
 			}
 
 			int nEff = 0; // effective number of hits
@@ -158,7 +157,7 @@ int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
 
 	// display histograms
 	float winScale = 0.75;
-	int nWide = 3;
+	int nWide = 2;
 	int nHigh = 2;
 	TCanvas* c1 = new TCanvas("c1", "First canvas", 500*nWide*winScale, 500*nHigh*winScale);
 	c1->Draw();
@@ -167,8 +166,8 @@ int reconstruct_energy(char *filename="../wcsim.root", bool verbose=false) {
 	c1->cd(2); recPhi->Draw();
 	c1->cd(3); recAlpha->Draw();
 	c1->cd(4); recCherenkov->Draw();
-	c1->cd(5); recEllipticity->Draw();
-	c1->cd(6); recLikelihood->Draw();
+	//c1->cd(5); recEllipticity->Draw();
+	//c1->cd(6); recLikelihood->Draw();
 
 	return 0;
 }
