@@ -135,16 +135,16 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
 				r[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i] in ms
-				tCorrected[i] = (bsT[i]/1000000) - (r[i]/225407);
+				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
+				tCorrected[i] = bsT[i] - (r[i]/0.225407); // speed of light in water (refraction index n=1.33)
 			}
 
-			// look for 50/100 ms interval with maximal number of hits --> start/end time: tMin50, tMax50, …
+			// look for 50/100 ns interval with maximal number of hits --> start/end time: tMin50, tMax50
 			int tMin50 = 0;
 			int tMax50 = tMin50 + 50;
 
-			int n50 = 0; // number of hits in 50 ms interval
-			int n50NEW = 0; // jmTODO: das sollte in der Schleife stehen (und die Schleife sollte umstrukturiert werden!)
+			int n50 = 0; // number of hits in 50 ns interval
+			int n50NEW = 0;
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
 				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
 					n50NEW++;
@@ -170,7 +170,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 			int tMin100 = 0;
 			int tMax100 = tMin100 + 100;
-			int n100 = 0; // number of hits in 100 ms intervaL
+			int n100 = 0; // number of hits in 100 ns intervaL
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
 				if (tMin100 < tCorrected[i] && tCorrected[i] < tMax100) {
 					n100++;
@@ -180,7 +180,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 
 			float nEff = 0; // effective number of hits
-			for (i=0;i<n50;i++) { // loop over hits in 50 ms interval and calculate nEff
+			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
 				//calculate occupancy
 				//TODO: define x[i] (number of hit PMTs in 3x3 around the i-th PMT) and occupancy
 // 				if (x[i] < 1) {
@@ -192,7 +192,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 				//calculate late hits correction
 				//TODO define nAlive, rDark
-				int nAlive = rDark = 1; // dummy values
+				int nAlive = 1, rDark = 1; // dummy values
 				float lateHits = (n100 - n50 - (nAlive * rDark * 50)) / n50;
 
 				//calculate dark noise correction
@@ -202,7 +202,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				//TODO calculate photoCathodeCoverage 1/S(Theta, Phi)
 				//TODO calculate waterTransparency = exp(r50[i]/lambdaEff)
 				//TODO calculate quantumEfficiency = 1/QE(t)
-				float photoCathodeCoverage = waterTransparency = quantumEfficiency = 1; // dummy values
+				float photoCathodeCoverage = 1, waterTransparency = 1, quantumEfficiency = 1; // dummy values
 
 				float nEffHit = (occupancy + lateHits - darkNoise) * photoCathodeCoverage * waterTransparency * quantumEfficiency;
 				nEff += nEffHit;
