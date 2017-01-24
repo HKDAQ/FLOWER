@@ -82,6 +82,10 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 		float bsT[500],bsQ[500];
 		float bsVertex[4],bsResult[6];
 		float bsGood[3];
+		float r[500];
+		float tCorrected[500];
+		float PMTX[500],PMTY[500],PMTZ[500];
+		int  n50Array[500];
 		int bsCAB[500];
 		int *bsNhit;
 		int bsNsel[2];
@@ -100,6 +104,9 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				bsT[i] = cherenkovdigihit->GetT();
 				bsQ[i] = cherenkovdigihit->GetQ();
 				bsCAB[i] = cherenkovdigihit->GetTubeId();
+				PMTX[i] = cherenkovdigihit->GetPosition[0];
+				PMTY[i] = cherenkovdigihit->GetPosition[1];
+				PMTZ[i] = cherenkovdigihit->GetPosition[2];
 			} // End of loop over Cherenkov digihits
 
 			// fit vertex position and direction using BONSAI
@@ -125,26 +132,80 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
-
-				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
+                                r[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i] in ms
+				tCorrected[i] = (bsT[i]/1000000) - (r[i]/225407);
 			}
 
 			// look for 50/100 ms interval with maximal number of hits --> start/end time: tMin50, tMax50, …
-
+			tMin50 = 0;
+			tMax50 = tMin + 50;
+			
 			int n50 = 0; // number of hits in 50 ms interval
+			int n50NEW = 0
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
-//				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
-//					n50++;
-//					// for convenience: save distance from vertex, incident angles on PMT, tubeID to separate arrays
-//				}
+				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
+					n50NEW++;
+				}
+
+				if (n50NEW > n50) {
+					n50 = n50NEW;
+					
+					// for n50 calculate and save distance from vertex, incident angles on PMT, tubeID to separate arrays
+					// can we find a way to do this outside the loop so we only do this once?
+					for (int j=0;j<n50;j++) {
+						float r50[500],ThetaPMT[500],PhiPMT[500];
+						int bsCAB50[500];
+						r50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+						bsCAB50[i] = cherenkovdigihit->GetTubeId();
+						ThetaPMT[i] = // TODO ;
+						PhiPMT[i] = // TODO ;
+					}
+				}
+			
+				tMin50++
+					
 			}
+			
+			tMin100 = 0;
+			tMax100 = tMin100 + 100;
+			int n100 = 0; // number of hits in 100 ms intervaL
+                        for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
+                                if (tMin100 < tCorrected[i] && tCorrected[i] < tMax100) {
+                                        n100++;
+                                }
+				tMin100++
+			}
+			
 
 			int nEff = 0; // effective number of hits
 			for (i=0;i<n50;i++) { // loop over hits in 50 ms interval and calculate nEff
-				//nEff += …;
+				//calculate occupancy
+				//TODO: define x[i] (number of hit PMTs in 3x3 around the i-th PMT) and occupancy
+				if (x[i] < 1) {
+					occupancy[i] = log(1/(1-x[i]))/x[i]
+				}
+				if (x[i] == 1){
+					occupancy[i] = 3.0
+				}
+				
+				//calculate late hits correction
+				//TODO define nAlive, rDark
+				lateHits = ((n100-n50-nAlive)*rDark*50)/n50;
+				
+				//calculate dark noise correction
+				darkNoise = (nAlive*rDark*50)/n50;
+
+				//TODO define QE(t), lambdaEff
+				//TODO calculate photoCathodeCoverage 1/S(Theta, Phi)
+				//TODO calculate waterTransparency = exp(r50[i]/lambdaEff
+				//TODO calculate quantumEfficiency = 1/QE(t)
+
+				nEffHit = (occupancy + lateHits - darkNoise) * photoCathodeCoverage * waterTransparency * quantumEfficiency;
+				//nEff += ;
 			}
 
-			int deadPMTCorrection = 1; // total number of PMTs / number of working PMTs
+			int deadPMTCorrection = 1; // TODO total number of PMTs / number of working PMTs
 			nEff *= deadPMTCorrection;
 
 
