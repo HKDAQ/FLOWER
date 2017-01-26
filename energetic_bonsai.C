@@ -153,15 +153,13 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				if (n50NEW > n50) {
 					n50 = n50NEW;
 
-					// for n50 calculate and save distance from vertex, incident angles on PMT, tubeID to separate arrays
+					// for n50 calculate and save distance from vertex (in cm), tubeID to separate arrays
 					// can we find a way to do this outside the loop so we only do this once?
 					for (int j=0;j<n50;j++) {
-						float r50[500],ThetaPMT[500],PhiPMT[500];
+						float r50[500];
 						int bsCAB50[500];
 						r50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 						bsCAB50[i] = cherenkovdigihit->GetTubeId();
-//						ThetaPMT[i] = // TODO ;
-//						PhiPMT[i] = // TODO ;
 					}
 				}
 
@@ -178,38 +176,36 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				tMin100++;
 			}
 
-
+			int nPMTs = 1; // total number of PMTs (dummy value)
+			int nWorkingPMTs = 1; // number of working PMTs (dummy value)
+			int darkRate = 1; // dark noise rate of the PMT (dummy value)
+			float lambdaEff = 100; // scattering length in cm (dummy value)
 			float nEff = 0; // effective number of hits
 			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
-				//calculate occupancy
-				//TODO: define x[i] (number of hit PMTs in 3x3 around the i-th PMT) and occupancy
-// 				if (x[i] < 1) {
-// 					occupancy[i] = log(1/(1-x[i]))/x[i];
-// 				}
-// 				if (x[i] == 1){
-// 					occupancy[i] = 3.0;
-// 				}
+				// correct for multiple hits on a single PMT
+				float occupancy = occupancy(bsCAB50[i], n50, bsCAB50);
 
-				//calculate late hits correction
-				//TODO define nAlive, rDark
-				int nAlive = 1, rDark = 1; // dummy values
-				float lateHits = (n100 - n50 - (nAlive * rDark * 50)) / n50;
+				// correct for delayed hits (e.g. due to scattering)
+				float lateHits = (n100 - n50 - (nWorkingPMTs * darkRate * 50)) / n50;
 
-				//calculate dark noise correction
-				float darkNoise = (nAlive*rDark*50)/n50;
+				// substract dark noise hits
+				float darkNoise = (nWorkingPMTs * darkRate * 50) / n50;
 
-				//TODO define QE(t), lambdaEff
-				//TODO calculate photoCathodeCoverage 1/S(Theta, Phi)
-				//TODO calculate waterTransparency = exp(r50[i]/lambdaEff)
-				//TODO calculate quantumEfficiency = 1/QE(t)
-				float photoCathodeCoverage = 1, waterTransparency = 1, quantumEfficiency = 1; // dummy values
+				// correct for photoCathodeCoverage
+				float photoCathodeCoverage = 1 / effCoverage(bsCAB50[i], bsVertex, r50[i]);
+
+				// correct for scattering in water
+				float waterTransparency = exp(r50[i] / lambdaEff);
+
+				// correct for quantum efficiency of PMT
+				// TODO: Get this from root file, once https://github.com/WCSim/WCSim/pull/198 is merged
+				float quantumEfficiency = 1/0.315; // dummy value
 
 				float nEffHit = (occupancy + lateHits - darkNoise) * photoCathodeCoverage * waterTransparency * quantumEfficiency;
 				nEff += nEffHit;
 			}
 
-			float deadPMTCorrection = 1; // TODO total number of PMTs / number of working PMTs
-			nEff *= deadPMTCorrection;
+			nEff *= nPMTs / nWorkingPMTs; // correct for dead PMTs
 
 
 		} // End of loop over triggers in event
@@ -236,16 +232,45 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 	return 0;
 }
 
-int occupancy(int tubeID) { // TODO
-	// in 3x3 grid around PMT 'tubeID', what proportion x of PMTs has seen a hit?
-	// return log(1/(1-x))/x, if x<1
-	// return 3, if x=1
-	return 1;
+int occupancy(int tubeID, int n50, int *tubeIDs) {
+	// In a 3x3 grid around PMT 'tubeID', what proportion of PMTs has seen a hit?
+	// TODO: Treat PMTs at the edge (that have fewer neighbors) differently!
+
+	WCSimRootPMT p = geo->GetPMT(tubeID);
+	float x = p.GetPosition(0);
+	float y = p.GetPosition(1);
+	float z = p.GetPosition(2);
+
+	int nearbyHits = 0;
+	WCSimRootPMT pmt;
+	for (int i=0; i<n50; i++) {
+		pmt = geo->GetPMT(tubeIDs[i]);
+		if (sqrt(pow(x - pmt.GetPosition(0), 2) + pow(y - pmt.GetPosition(1), 2) + pow(z - pmt.GetPosition(2), 2)) < 101) {
+			// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
+			nearbyHits++;
+		}
+	}
+
+	float ratio = nearbyHits / 9;
+
+	if (ratio < 1) {
+		return log(1 / (1-ratio)) / ratio;
+	} else {
+		return 3.0;
+	}
 }
 
-float photocathodeCoverage (int tubeID) { // TODO
+float effCoverage (int tubeID, float *bsVertex, float distance) {
 	// dependent on angle of incidence
-	return 0.4;
+	WCSimRootPMT pmt = geo->GetPMT(tubeID);
+
+	// calculate theta, phi in Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
+	float incidentAngle = acos( (pmt.GetOrientation(0)*bsVertex[0] + pmt.GetOrientation(1)*bsVertex[1] + pmt.GetOrientation(2)*bsVertex[2]) / distance);
+	float azimuthAngle = 0; // dummy value
+
+	// TODO: return S(theta, phi) as show in Fig. 4.5 (right)
+
+	return 0.4; // dummy value (equivalent to incidentAngle = 0)
 }
 
 int setPlotStyle() {
