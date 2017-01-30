@@ -265,7 +265,8 @@ float effCoverage (int tubeID, float *bsVertex, float distance) {
 	WCSimRootPMT pmt = geo->GetPMT(tubeID);
 
 	// calculate theta, phi in Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
-	float incidentAngle = acos( (pmt.GetOrientation(0)*bsVertex[0] + pmt.GetOrientation(1)*bsVertex[1] + pmt.GetOrientation(2)*bsVertex[2]) / distance);
+	float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - pmt.GetPosition(0)) + pmt.GetOrientation(1)*(bsVertex[1] - pmt.GetPosition(1)) + pmt.GetOrientation(2)*(bsVertex[2] - pmt.GetPosition(2));
+	float incidentAngle = acos( dotProduct / distance);
 	float azimuthAngle = 0; // dummy value
 
 	// TODO: return S(theta, phi) as show in Fig. 4.5 (right)
