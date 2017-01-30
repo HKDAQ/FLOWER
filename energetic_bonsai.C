@@ -82,7 +82,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 		float bsT[500],bsQ[500];
 		float bsVertex[4],bsResult[6];
 		float bsGood[3];
-		float r[500];
+		float distance[500];
 		float tCorrected[500];
 		float PMTX[500],PMTY[500],PMTZ[500];
 		int  n50Array[500];
@@ -134,14 +134,40 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
-				r[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+				distance[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
-				tCorrected[i] = bsT[i] - (r[i]/0.225407); // speed of light in water (refraction index n=1.33)
+				tCorrected[i] = bsT[i] - (distance[i]/0.225407); // speed of light in water (refraction index n=1.33)
+			
 			}
+			
+			// sort tCorrected array into ascending order
+			int main(void) {
+
+				int tmp, j;
+
+	                        for (int i=0;i<500;i++) { //Loop through tCorrected array
+
+        	                        scanf("%d%"; &tCorrected[i]);
+
+                	                for (int i=0;i<499;i++) {
+
+                        	                for (int j=i+1;j<(500-i-1);j++) {
+
+                                	                if tCorrected[j] > tCorrected[j+1] {
+							// swap
+                                        	        tmp = tCorrected[j];
+	                                               	tCorrected[j] = tCorrected[j+1];
+                                             		tCorrected[j+1] = tmp;
+
+                                                	}
+                                        	}
+                                	}
+				}//end of loop through tCorrected array
+			}	
 
 			// look for 50/100 ns interval with maximal number of hits --> start/end time: tMin50, tMax50
-			int tMin50 = 0;
-			int tMax50 = tMin50 + 50;
+			float tMin50 = 0;
+			float tMax50 = tMin50 + 50;
 
 			int n50 = 0; // number of hits in 50 ns interval
 			int n50NEW = 0;
@@ -156,24 +182,25 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 					// for n50 calculate and save distance from vertex (in cm), tubeID to separate arrays
 					// can we find a way to do this outside the loop so we only do this once?
 					for (int j=0;j<n50;j++) {
-						float r50[500];
+						float distance50[500];
 						int bsCAB50[500];
-						r50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+						distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 						bsCAB50[i] = cherenkovdigihit->GetTubeId();
 					}
+				
+
+					// calculate number of hits in a 100ns interval with same tMin as the 50ns interval with the max number of hits
+//					int n100 = 0
+//					float tMax100 = tMax50 + 50;
+
+//					if (tMin50 < tCorrected[i] && tCorrected[i] < tMax100) {
+						
+//						n100++;
+//					}
+	
 				}
 
 				tMin50++;
-			}
-
-			int tMin100 = 0;
-			int tMax100 = tMin100 + 100;
-			int n100 = 0; // number of hits in 100 ns intervaL
-			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
-				if (tMin100 < tCorrected[i] && tCorrected[i] < tMax100) {
-					n100++;
-				}
-				tMin100++;
 			}
 
 			int nPMTs = 1; // total number of PMTs (dummy value)
