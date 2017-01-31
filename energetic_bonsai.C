@@ -179,7 +179,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			int nPMTs = 1; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 1; // number of working PMTs (dummy value)
 			int darkRate = 1; // dark noise rate of the PMT (dummy value)
-			float lambdaEff = 100; // scattering length in cm (dummy value)
+			float lambdaEff = 100*100; // scattering length in cm (dummy value, based on Design Report II.2.E.1)
 			float nEff = 0; // effective number of hits
 			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
 				// correct for multiple hits on a single PMT
