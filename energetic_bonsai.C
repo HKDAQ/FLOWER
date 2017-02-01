@@ -136,7 +136,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
 				r[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
-				tCorrected[i] = bsT[i] - (r[i]/0.225407); // speed of light in water (refraction index n=1.33)
+				tCorrected[i] = bsT[i] - (r[i]/22.5407); // speed of light in water in cm/ns (refraction index n=1.33)
 			}
 
 			// look for 50/100 ns interval with maximal number of hits --> start/end time: tMin50, tMax50
@@ -176,9 +176,9 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				tMin100++;
 			}
 
-			int nPMTs = 1; // total number of PMTs (dummy value)
-			int nWorkingPMTs = 1; // number of working PMTs (dummy value)
-			int darkRate = 1; // dark noise rate of the PMT (dummy value)
+			int nPMTs = 40000; // total number of PMTs (dummy value)
+			int nWorkingPMTs = 39999; // number of working PMTs (dummy value)
+			float darkRate = 8.4/1000000; // dark noise rate (per ns) of the PMT (dummy value, based on 8.4kHz for B&L PMT)
 			float lambdaEff = 100*100; // scattering length in cm (dummy value, based on Design Report II.2.E.1)
 			float nEff = 0; // effective number of hits
 			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
@@ -205,8 +205,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				nEff += nEffHit;
 			}
 
-			nEff *= nPMTs / nWorkingPMTs; // correct for dead PMTs
-
+			nEff *= nPMTs / float(nWorkingPMTs); // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
 
 		} // End of loop over triggers in event
 
