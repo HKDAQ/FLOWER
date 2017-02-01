@@ -206,7 +206,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			int nPMTs = 1; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 1; // number of working PMTs (dummy value)
 			int darkRate = 1; // dark noise rate of the PMT (dummy value)
-			float lambdaEff = 100; // scattering length in cm (dummy value)
+			float lambdaEff = 100*100; // scattering length in cm (dummy value, based on Design Report II.2.E.1)
 			float nEff = 0; // effective number of hits
 			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
 				// correct for multiple hits on a single PMT
@@ -292,7 +292,8 @@ float effCoverage (int tubeID, float *bsVertex, float distance) {
 	WCSimRootPMT pmt = geo->GetPMT(tubeID);
 
 	// calculate theta, phi in Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
-	float incidentAngle = acos( (pmt.GetOrientation(0)*bsVertex[0] + pmt.GetOrientation(1)*bsVertex[1] + pmt.GetOrientation(2)*bsVertex[2]) / distance);
+	float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - pmt.GetPosition(0)) + pmt.GetOrientation(1)*(bsVertex[1] - pmt.GetPosition(1)) + pmt.GetOrientation(2)*(bsVertex[2] - pmt.GetPosition(2));
+	float incidentAngle = acos( dotProduct / distance);
 	float azimuthAngle = 0; // dummy value
 
 	// TODO: return S(theta, phi) as show in Fig. 4.5 (right)
