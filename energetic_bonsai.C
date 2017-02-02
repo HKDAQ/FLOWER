@@ -136,7 +136,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
 				r[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
-				tCorrected[i] = bsT[i] - (r[i]/22.5407); // speed of light in water in cm/ns (refraction index n=1.33)
+				tCorrected[i] = bsT[i] - (r[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
 			}
 
 			// look for 50/100 ns interval with maximal number of hits --> start/end time: tMin50, tMax50
