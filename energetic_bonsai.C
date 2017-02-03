@@ -138,7 +138,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				distance[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
 				
-				tCorrected[i] = bsT[i] - (r[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
+				tCorrected[i] = bsT[i] - (distance[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
 
 			}
 			
@@ -223,7 +223,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			for (int i=iValue;i<(iMaxValue);i++) { // loop over hits in n50Max, (i still corresponding to range 0<i<cherenkovdigihits)
 
 				distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-                                bsCAB50[i] = bsCAB[i];
+//                              bsCAB50[i] = bsCAB[i];
 
                         } // end of loop over hits in n50Max
  
