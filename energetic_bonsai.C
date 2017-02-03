@@ -141,13 +141,13 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			}
 			
 			// sort tCorrected array into ascending order
-			int main(void) {
+			int sort(void) {
 
 				int tmp, j;
 
 	                        for (int i=0;i<500;i++) { //Loop through tCorrected array
 
-        	                        scanf("%d%"; &tCorrected[i]);
+        	                        scanf("%d"; &tCorrected[i]);
 
                 	                for (int i=0;i<499;i++) {
 
@@ -163,45 +163,68 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
                                         	}
                                 	}
 				}//end of loop through tCorrected array
-			}	
 
-			// look for 50/100 ns interval with maximal number of hits --> start/end time: tMin50, tMax50
-			float tMin50 = 0;
-			float tMax50 = tMin50 + 50;
-
-			int n50 = 0; // number of hits in 50 ns interval
-			int n50NEW = 0;
-			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
-				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
-					n50NEW++;
-				}
-
-				if (n50NEW > n50) {
-					n50 = n50NEW;
-
-					// for n50 calculate and save distance from vertex (in cm), tubeID to separate arrays
-					// can we find a way to do this outside the loop so we only do this once?
-					for (int j=0;j<n50;j++) {
-						float distance50[500];
-						int bsCAB50[500];
-						distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-						bsCAB50[i] = cherenkovdigihit->GetTubeId();
-					}
-				
-
-					// calculate number of hits in a 100ns interval with same tMin as the 50ns interval with the max number of hits
-//					int n100 = 0
-//					float tMax100 = tMax50 + 50;
-
-//					if (tMin50 < tCorrected[i] && tCorrected[i] < tMax100) {
-						
-//						n100++;
-//					}
-	
-				}
-
-				tMin50++;
 			}
+
+			int n50[500];//dummy number of elements for n50 array TODO work out sensible number for array
+			int n100[500];//dummy number of elements for n100 array
+			int tMin[500];
+			int tMax50[500];
+			float distance50[500];
+			int bsCab50[500];
+			int tMax100[500];
+
+			// look for the 50 ns interval with the maximum total number of hits --> start/end time: tMin, tMax50		
+
+			for (int i=0;i<ncherenkovdigihits;i++) { // Loop through values of tCorrected for all hits to find the number of hits for each 50 ns window for sliding minimum value from 0 to 500 ms
+				
+				tMin[i]=i;
+				tMax50[i]=i+50;
+				tMax100[i]=i+100;				
+
+				if (tMin[i] < tCorrected[i] && tCorrected[i] < tMax50[i]) {
+				
+					n50[i]++;
+
+				}
+					
+
+				if (tMin[i] < tCorrected[i] && tCorrected[i] < tMax100) { 
+	
+						n100[i]++;
+				
+				}
+				
+			} // end of loop over ncherenkovdigihits
+			
+			// find the maximum value in the n50 array
+
+			int n50Max = n50[i];
+			
+			for (int i=0;i<500;i++) { //Loop through elements in the n50 array dummy value = 500
+				
+				if (n50[i] > n50Max) {
+					
+					n50Max = n50[i];		
+					int iValue = i;
+				}
+		
+			} // end of loop over n50 array
+			
+			// find the number of hits in the 100 ns interval corresponding to the maximal 50 ns window
+			int n100Max = n100[iValue];
+
+			// calculate distance from vertex in cm and tubeID and send to separate arrays for all hits in n50Max 
+
+			int iMaxValue = iValue+n50Max;
+
+			for (int i=iValue;i<(iMaxValue);i++) { // loop over hits in n50Max, (i still corresponding to range 0<i<cherenkovdigihits)
+
+				distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+                                bsCAB50[i] = bsCAB[i];
+
+                        } // end of loop over hits in n50Max
+ 
 
 			int nPMTs = 1; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 1; // number of working PMTs (dummy value)
