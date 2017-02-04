@@ -94,7 +94,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			trigger = event->GetTrigger(index);
 			int ncherenkovdigihits = trigger->GetNcherenkovdigihits();
 			bsNhit = & ncherenkovdigihits;
-
+			
 			// get time, charge and PMT number for each WCSimRootCherenkovDigiHit in the trigger
 			for (int i=0;i<ncherenkovdigihits;i++) {
 				TObject *element = (trigger->GetCherenkovDigiHits())->At(i);
@@ -110,7 +110,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				PMTY[i] = pmt.GetPosition(1);
 				PMTZ[i] = pmt.GetPosition(2);
 			} // End of loop over Cherenkov digihits
-
+			
 			// fit vertex position and direction using BONSAI
 			bonsai->BonsaiFit( bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB, bsT, bsQ);
 
@@ -141,101 +141,123 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				tCorrected[i] = bsT[i] - (distance[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
 
 			}
-			
-			// sort tCorrected array into ascending order
-			int sort(void) {
 
-				int tmp, j;
 
-	                        for (int i=0;i<500;i++) { //Loop through tCorrected array
-
-        	                        scanf("%d"; &tCorrected[i]);
-
-                	                for (int i=0;i<499;i++) {
-
-                        	                for (int j=i+1;j<(500-i-1);j++) {
-
-                                	                if tCorrected[j] > tCorrected[j+1] {
-							// swap
-                                        	        tmp = tCorrected[j];
-	                                               	tCorrected[j] = tCorrected[j+1];
-                                             		tCorrected[j+1] = tmp;
-
-                                                	}
-                                        	}
-                                	}
-				}//end of loop through tCorrected array
-
+			// create a copy of tCorrected
+			float tCorrectedSort[500];
+  			
+			for (int i=0;i<500;i++) {
+				
+				tCorrectedSort[i] = tCorrected[i];
+				
 			}
 
-			int n50[500];//dummy number of elements for n50 array TODO work out sensible number for array
-			int n100[500];//dummy number of elements for n100 array
-			int tMin[500];
-			int tMax50[500];
-			float distance50[500];
-			int bsCab50[500];
-			int tMax100[500];
+							
+			// sort tCorrectedSort array into ascending order
 
-			// look for the 50 ns interval with the maximum total number of hits --> start/end time: tMin, tMax50		
+			int tmp;
 
-			for (int i=0;i<ncherenkovdigihits;i++) { // Loop through values of tCorrected for all hits to find the number of hits for each 50 ns window for sliding minimum value from 0 to 500 ms
-				
-				tMin[i]=i;
-				tMax50[i]=i+50;
-				tMax100[i]=i+100;				
+                        for (int i=0;i<500;i++) { //Loop through tCorrected array
 
-				if (tMin[i] < tCorrected[i] && tCorrected[i] < tMax50[i]) {
-				
-					n50[i]++;
+      	              		for (int j=i+1;j<500;j++) {
 
-				}
-					
+                        		if (tCorrectedSort[i] > tCorrectedSort[j]) {
+						// swap the values around
+						tmp = tCorrectedSort[i];
+	               	                        tCorrectedSort[i] = tCorrectedSort[j];
+       	                	                tCorrectedSort[j] = tmp;
+	                                
+                                       	}
+                               	}
+			}//end of loop through tCorrectedSort array
 
-				if (tMin[i] < tCorrected[i] && tCorrected[i] < tMax100) { 
-	
-						n100[i]++;
-				
-				}
-				
-			} // end of loop over ncherenkovdigihits
+			int n50[500];
+			int n100[500];
 			
+			// look for the 50 ns interval with the maximum total number of hits --> start/end time: tMin, tMax50
+			float tMin;
+			float tMax50;
+			float tMax100;
+			int n50tmp;
+			int n100tmp;
+
+			for (int i=0;i<500;i++) { // loop each element in tCorrectedSort array; take each element as tMin and find 50 and 100 ns window
+				tMin = tCorrectedSort[i];
+				tMax50 = tMin+50;
+				tMax100 = tMin + 100;
+				for (int j=0;j<500;j++) { // loop over tCorrected array to find number of hits in each window
+
+					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMax50) {
+						n50tmp++;
+					}
+
+					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMax100) {
+						n100tmp++;
+					}
+				
+				} // end of loop over tCorrectedSort array to allocate hits to 50 ns window
+			
+			//create arrays giving number of hits in each 50ns and 100ns interval
+			n50[i] = n50tmp;
+			n50tmp=0;
+			n100[i] = n100tmp;
+			n100tmp = 0;
+			
+			}
+
+
 			// find the maximum value in the n50 array
 
-			int n50Max = n50[i];
+                        int n50Max = 0;
+                        int iValue;
+
+                        for (int i=0;i<500;i++) { //Loop through elements in the n50 array
+
+                                if (n50[i] > n50Max) {
+
+                                        n50Max = n50[i];
+                                        iValue = i;
+                                }
+
+                        } // end of loop over n50 array
+
+
+                        // find the number of hits in the 100 ns interval corresponding to the maximal 50 ns window
+                        int n100Max = n100[iValue];
 			
-			for (int i=0;i<500;i++) { //Loop through elements in the n50 array dummy value = 500
-				
-				if (n50[i] > n50Max) {
-					
-					n50Max = n50[i];		
-					int iValue = i;
-				}
-		
-			} // end of loop over n50 array
+			float distance50[500];
+                        int tubeID[500];
 			
-			// find the number of hits in the 100 ns interval corresponding to the maximal 50 ns window
-			int n100Max = n100[iValue];
 
-			// calculate distance from vertex in cm and tubeID and send to separate arrays for all hits in n50Max 
+			// create arrays of distance from vertex in cm and tubeID for each hit in maximal interval
+			// NB arrays have 500 elements but only nMax50 elements are required
+			// TODO either change array length to n50Max, or will need to specify length when using arrays (esp tubeID)
+			for (int i=0;i<ncherenkovdigihits;i++) { // loop each hit in ncherenkovdigihits
 
-			int iMaxValue = iValue+n50Max;
-
-			for (int i=iValue;i<(iMaxValue);i++) { // loop over hits in n50Max, (i still corresponding to range 0<i<cherenkovdigihits)
-
-				distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-//                              bsCAB50[i] = bsCAB[i];
-
-                        } // end of loop over hits in n50Max
+				tMin = tCorrectedSort[iValue];
+                                tMax50 = tMin+50;
+                                
+                                if (tMin <tCorrected[i] && tCorrected[i] < tMax50) {
+                        		distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+                        		tubeID[i] = bsCAB[i];	
  
+				}	
 
+                        } // end of loop over hits
+
+			fp = fopen("distance50.txt", "w");
+			for (int i=0;i<500;i++) {
+				fprintf(fp, "%d", distance50[i]);
+			}
+			fclose(fp);
 			int nPMTs = 40000; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 39999; // number of working PMTs (dummy value)
 			float darkRate = 8.4/1000000; // dark noise rate (per ns) of the PMT (dummy value, based on 8.4kHz for B&L PMT)
 			float lambdaEff = 100*100; // scattering length in cm (dummy value, based on Design Report II.2.E.1)
 			float nEff = 0; // effective number of hits
-			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
+			for (i=0;i<n50Max;i++) { // loop over hits in 50 ns interval and calculate nEff
 				// correct for multiple hits on a single PMT
-				float occupancy = occupancy(bsCAB50[i], n50, bsCAB50);
+				float occupancy = occupancy(tubeID[i], n50Max, tubeID);
 
 				// correct for delayed hits (e.g. due to scattering)
 				float lateHits = (n100 - n50 - (nWorkingPMTs * darkRate * 50)) / n50;
