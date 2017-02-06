@@ -227,7 +227,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			
 			float distance50[500];
                         int tubeID[500];
-			
+			int j=0;			
 
 			// create arrays of distance from vertex in cm and tubeID for each hit in maximal interval
 			// NB arrays have 500 elements but only nMax50 elements are required
@@ -236,20 +236,16 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 				tMin = tCorrectedSort[iValue];
                                 tMax50 = tMin+50;
-                                
+        
                                 if (tMin <tCorrected[i] && tCorrected[i] < tMax50) {
-                        		distance50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-                        		tubeID[i] = bsCAB[i];	
- 
+                        		distance50[j] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+                        		tubeID[j] = bsCAB[i];	
+ 				
+				j++;
 				}	
 
                         } // end of loop over hits
 
-			fp = fopen("distance50.txt", "w");
-			for (int i=0;i<500;i++) {
-				fprintf(fp, "%d", distance50[i]);
-			}
-			fclose(fp);
 			int nPMTs = 40000; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 39999; // number of working PMTs (dummy value)
 			float darkRate = 8.4/1000000; // dark noise rate (per ns) of the PMT (dummy value, based on 8.4kHz for B&L PMT)
@@ -260,16 +256,16 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				float occupancy = occupancy(tubeID[i], n50Max, tubeID);
 
 				// correct for delayed hits (e.g. due to scattering)
-				float lateHits = (n100 - n50 - (nWorkingPMTs * darkRate * 50)) / n50;
+				float lateHits = (n100Max - n50Max - (nWorkingPMTs * darkRate * 50)) / n50Max;
 
 				// substract dark noise hits
-				float darkNoise = (nWorkingPMTs * darkRate * 50) / n50;
+				float darkNoise = (nWorkingPMTs * darkRate * 50) / n50Max;
 
 				// correct for photoCathodeCoverage
-				float photoCathodeCoverage = 1 / effCoverage(bsCAB50[i], bsVertex, r50[i]);
+				float photoCathodeCoverage = 1 / effCoverage(tubeID[i], bsVertex, distance50[i]);
 
 				// correct for scattering in water
-				float waterTransparency = exp(r50[i] / lambdaEff);
+				float waterTransparency = exp(distance50[i] / lambdaEff);
 
 				// correct for quantum efficiency of PMT
 				// TODO: Get this from root file, once https://github.com/WCSim/WCSim/pull/198 is merged
