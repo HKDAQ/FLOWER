@@ -82,7 +82,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 		float bsT[500],bsQ[500];
 		float bsVertex[4],bsResult[6];
 		float bsGood[3];
-		float r[500];
+		float distance[500];
 		float tCorrected[500];
 		float PMTX[500],PMTY[500],PMTZ[500];
 		int  n50Array[500];
@@ -94,7 +94,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			trigger = event->GetTrigger(index);
 			int ncherenkovdigihits = trigger->GetNcherenkovdigihits();
 			bsNhit = & ncherenkovdigihits;
-
+			
 			// get time, charge and PMT number for each WCSimRootCherenkovDigiHit in the trigger
 			for (int i=0;i<ncherenkovdigihits;i++) {
 				TObject *element = (trigger->GetCherenkovDigiHits())->At(i);
@@ -110,7 +110,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				PMTY[i] = pmt.GetPosition(1);
 				PMTZ[i] = pmt.GetPosition(2);
 			} // End of loop over Cherenkov digihits
-
+			
 			// fit vertex position and direction using BONSAI
 			bonsai->BonsaiFit( bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB, bsT, bsQ);
 
@@ -133,69 +133,139 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			// http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
 
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
+
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
-				r[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+				distance[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
 				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
-				tCorrected[i] = bsT[i] - (r[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
+				
+				tCorrected[i] = bsT[i] - (distance[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
+
 			}
 
-			// look for 50/100 ns interval with maximal number of hits --> start/end time: tMin50, tMax50
-			int tMin50 = 0;
-			int tMax50 = tMin50 + 50;
 
-			int n50 = 0; // number of hits in 50 ns interval
-			int n50NEW = 0;
-			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
-				if (tMin50 < tCorrected[i] && tCorrected[i] < tMax50) {
-					n50NEW++;
-				}
+			// create a copy of tCorrected
+			float tCorrectedSort[500];
+  			
+			for (int i=0;i<500;i++) {
+				
+				tCorrectedSort[i] = tCorrected[i];
+				
+			}
 
-				if (n50NEW > n50) {
-					n50 = n50NEW;
+							
+			// sort tCorrectedSort array into ascending order
 
-					// for n50 calculate and save distance from vertex (in cm), tubeID to separate arrays
-					// can we find a way to do this outside the loop so we only do this once?
-					for (int j=0;j<n50;j++) {
-						float r50[500];
-						int bsCAB50[500];
-						r50[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-						bsCAB50[i] = cherenkovdigihit->GetTubeId();
+			int tmp;
+
+                        for (int i=0;i<500;i++) { //Loop through tCorrected array
+
+      	              		for (int j=i+1;j<500;j++) {
+
+                        		if (tCorrectedSort[i] > tCorrectedSort[j]) {
+						// swap the values around
+						tmp = tCorrectedSort[i];
+	               	                        tCorrectedSort[i] = tCorrectedSort[j];
+       	                	                tCorrectedSort[j] = tmp;
+	                                
+                                       	}
+                               	}
+			}//end of loop through tCorrectedSort array
+
+			int n50[500];
+			int n100[500];
+			
+			// look for the 50 ns interval with the maximum total number of hits --> start/end time: tMin, tMax50
+			float tMin;
+			float tMax50;
+			float tMax100;
+			int n50tmp;
+			int n100tmp;
+
+			for (int i=0;i<500;i++) { // loop each element in tCorrectedSort array; take each element as tMin and find 50 and 100 ns window
+				tMin = tCorrectedSort[i];
+				tMax50 = tMin+50;
+				tMax100 = tMin + 100;
+				for (int j=0;j<500;j++) { // loop over tCorrected array to find number of hits in each window
+
+					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMax50) {
+						n50tmp++;
 					}
-				}
 
-				tMin50++;
+					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMax100) {
+						n100tmp++;
+					}
+				
+				} // end of loop over tCorrectedSort array to allocate hits to 50 ns window
+			
+			//create arrays giving number of hits in each 50ns and 100ns interval
+			n50[i] = n50tmp;
+			n50tmp=0;
+			n100[i] = n100tmp;
+			n100tmp = 0;
+			
 			}
 
-			int tMin100 = 0;
-			int tMax100 = tMin100 + 100;
-			int n100 = 0; // number of hits in 100 ns intervaL
-			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through elements in the TClonesArray of WCSimRootCherenkovDigiHits
-				if (tMin100 < tCorrected[i] && tCorrected[i] < tMax100) {
-					n100++;
-				}
-				tMin100++;
-			}
+
+			// find the maximum value in the n50 array
+
+                        int n50Max = 0;
+                        int iValue;
+
+                        for (int i=0;i<500;i++) { //Loop through elements in the n50 array
+
+                                if (n50[i] > n50Max) {
+
+                                        n50Max = n50[i];
+                                        iValue = i;
+                                }
+
+                        } // end of loop over n50 array
+
+
+                        // find the number of hits in the 100 ns interval corresponding to the maximal 50 ns window
+                        int n100Max = n100[iValue];
+			
+			float distance50[500];
+                        int tubeID[500];
+			int j=0;			
+
+			// create arrays of distance from vertex in cm and tubeID for each hit in maximal interval
+			// NB arrays have 500 elements but only nMax50 elements are required
+			// TODO either change array length to n50Max, or will need to specify length when using arrays (esp tubeID)
+			for (int i=0;i<ncherenkovdigihits;i++) { // loop each hit in ncherenkovdigihits
+
+				tMin = tCorrectedSort[iValue];
+                                tMax50 = tMin+50;
+        
+                                if (tMin <tCorrected[i] && tCorrected[i] < tMax50) {
+                        		distance50[j] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+                        		tubeID[j] = bsCAB[i];	
+ 				
+				j++;
+				}	
+
+                        } // end of loop over hits
 
 			int nPMTs = 40000; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 39999; // number of working PMTs (dummy value)
 			float darkRate = 8.4/1000000; // dark noise rate (per ns) of the PMT (dummy value, based on 8.4kHz for B&L PMT)
 			float lambdaEff = 100*100; // scattering length in cm (dummy value, based on Design Report II.2.E.1)
 			float nEff = 0; // effective number of hits
-			for (i=0;i<n50;i++) { // loop over hits in 50 ns interval and calculate nEff
+			for (i=0;i<n50Max;i++) { // loop over hits in 50 ns interval and calculate nEff
 				// correct for multiple hits on a single PMT
-				float occupancy = occupancy(bsCAB50[i], n50, bsCAB50);
+				float occupancy = occupancy(tubeID[i], n50Max, tubeID);
 
 				// correct for delayed hits (e.g. due to scattering)
-				float lateHits = (n100 - n50 - (nWorkingPMTs * darkRate * 50)) / n50;
+				float lateHits = (n100Max - n50Max - (nWorkingPMTs * darkRate * 50)) / n50Max;
 
 				// substract dark noise hits
-				float darkNoise = (nWorkingPMTs * darkRate * 50) / n50;
+				float darkNoise = (nWorkingPMTs * darkRate * 50) / n50Max;
 
 				// correct for photoCathodeCoverage
-				float photoCathodeCoverage = 1 / effCoverage(bsCAB50[i], bsVertex, r50[i]);
+				float photoCathodeCoverage = 1 / effCoverage(tubeID[i], bsVertex, distance50[i]);
 
 				// correct for scattering in water
-				float waterTransparency = exp(r50[i] / lambdaEff);
+				float waterTransparency = exp(distance50[i] / lambdaEff);
 
 				// correct for quantum efficiency of PMT
 				// TODO: Get this from root file, once https://github.com/WCSim/WCSim/pull/198 is merged
