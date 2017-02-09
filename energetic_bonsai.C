@@ -28,6 +28,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 	TH1F *recPhi = new TH1F("Reconstructed Phi", "Reconstructed Phi", 35, -3.500, 3.500);
 	TH1F *recAlpha = new TH1F("Reconstructed Alpha", "Reconstructed Alpha", 35, -3.500, 3.500);
 	TH1F *recCherenkov = new TH1F("Reconstructed Cherenkov angle", "Reconstructed Cherenkov angle", 100, -1, 1);
+	TH1F *recEnergy = new TH1F("Reconstructed Energy", "Reconstructed Energy", 25, 0, 500);
 	//TH1F *recEllipticity = new TH1F("Reconstructed ellipticity", "Reconstructed ellipticity", 100, -1, 1);
 	//TH1F *recLikelihood = new TH1F("Reconstructed likelihood", "Reconstructed likelihood", 100, -100, 900);
 	//TH1F *recR = new TH1F("Reconstructed R", "Reconstructed R", 200, 0, 1000);
@@ -226,9 +227,8 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
                         int n100Max = n100[iValue];
 			
 			float distance50[500];
-                        int tubeID[500];
-			int j=0;			
-
+                        int tubeID[500];			
+			int j=0;
 			// create arrays of distance from vertex in cm and tubeID for each hit in maximal interval
 			// NB arrays have 500 elements but only nMax50 elements are required
 			// TODO either change array length to n50Max, or will need to specify length when using arrays (esp tubeID)
@@ -245,25 +245,70 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				}	
 
                         } // end of loop over hits
+			
 
-			int nPMTs = 40000; // total number of PMTs (dummy value)
-			int nWorkingPMTs = 39999; // number of working PMTs (dummy value)
-			float darkRate = 8.4/1000000; // dark noise rate (per ns) of the PMT (dummy value, based on 8.4kHz for B&L PMT)
+			int nPMTs = 11146; // total number of PMTs (dummy value)
+			int nWorkingPMTs = 11146; // number of working PMTs (dummy value)
+			float darkRate = 4.2/1000000; // dark noise rate (per ns) of the PMT (dummy value, based on 8.4kHz for B&L PMT)
 			float lambdaEff = 100*100; // scattering length in cm (dummy value, based on Design Report II.2.E.1)
 			float nEff = 0; // effective number of hits
+			float occupancy;
+			float eRecArray[500];
 			for (i=0;i<n50Max;i++) { // loop over hits in 50 ns interval and calculate nEff
-				// correct for multiple hits on a single PMT
-				float occupancy = occupancy(tubeID[i], n50Max, tubeID);
+	
+				// calculate occupancy to correct for multiple hits on a single PMT
+				// In a 3x3 grid around PMT 'tubeID', what proportion of PMTs has seen a hit?
+				// TODO: Treat PMTs at the edge (that have fewer neighbors) differently!
+
+				WCSimRootPMT p = geo->GetPMT(tubeID[i]);
+				float x = p.GetPosition(0);
+				float y = p.GetPosition(1);
+				float z = p.GetPosition(2);
+
+				int nearbyHits = 0;
+				WCSimRootPMT pmt;
+				for (int j=0; j<n50Max; j++) { // loop through all hit pmts
+					pmt = geo->GetPMT(tubeID[j]);
+					if (sqrt(pow(x - pmt.GetPosition(0), 2) + pow(y - pmt.GetPosition(1), 2) + pow(z - pmt.GetPosition(2), 2)) < 101) {
+						// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
+						nearbyHits++;
+					}		
+				}
+
+
+				double ratio = float(nearbyHits) / 9;
+
+				if (ratio < 1) {
+					occupancy= log(1 / (1-ratio)) / ratio;
+				} else {
+					occupancy= 3.0;
+				}
+		
 
 				// correct for delayed hits (e.g. due to scattering)
-				float lateHits = (n100Max - n50Max - (nWorkingPMTs * darkRate * 50)) / n50Max;
+				float lateHits = (n100Max - n50Max - (nWorkingPMTs * darkRate * 50)) / float(n50Max);
 
 				// substract dark noise hits
-				float darkNoise = (nWorkingPMTs * darkRate * 50) / n50Max;
+				float darkNoise = (nWorkingPMTs * darkRate * 50) / float(n50Max);
 
-				// correct for photoCathodeCoverage
-				float photoCathodeCoverage = 1 / effCoverage(tubeID[i], bsVertex, distance50[i]);
+				// calculate effective coverage to correct for photoCathodeCoverage
+				
+				float effCoverage;
+				// dependent on angle of incidence
+				WCSimRootPMT pmt = geo->GetPMT(tubeID[i]);
 
+				// calculate theta, phi in Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
+//				float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - pmt.GetPosition(0)) + pmt.GetOrientation(1)*(bsVertex[1] - pmt.GetPosition(1)) + pmt.GetOrientation(2)*(bsVertex[2] - pmt.GetPosition(2));
+//				float incidentAngle = acos( dotProduct / distance50[i]);
+//				float azimuthAngle = 0; // dummy value
+
+				// TODO: return S(theta, phi) as show in Fig. 4.5 (right)
+				
+				effCoverage= 0.4; // dummy value (equivalent to incidentAngle = 0)
+				
+
+				float photoCathodeCoverage = 1 / effCoverage;
+				
 				// correct for scattering in water
 				float waterTransparency = exp(distance50[i] / lambdaEff);
 
@@ -275,10 +320,28 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				nEff += nEffHit;
 			}
 
+
+
 			nEff *= nPMTs / float(nWorkingPMTs); // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
+			float eRec;
+			float a[5]= {0.82, 0.13, -1.11*pow(10, -4), 1.25*pow(10, -6), -3.42*pow(10, -9)};
+			if (nEff<189.8) {
+				for (int n=0;n<4;n++) {
+					eRec= a[n]*pow(nEff, n);
+				}
+			} else {
+				eRec=25.00 + 0.138*(nEff-189.8);
+			}
+			recEnergy->Fill(eRec);
+			
+			FILE * fp;
+			fp = fopen("eRec.txt", "w");
+			fprintf(fp, "%f,", eRec);
+			fclose(fp);
 
+				
 		} // End of loop over triggers in event
-
+	
 		// reinitialize event between loops
 		event->ReInitialize();
 
@@ -293,7 +356,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 	c1->Divide(nWide, nHigh);
 	c1->cd(1); recTheta->Draw();
 	c1->cd(2); recPhi->Draw();
-	c1->cd(3); recAlpha->Draw();
+	c1->cd(3); recEnergy->Draw();
 	c1->cd(4); recCherenkov->Draw();
 	//c1->cd(5); recEllipticity->Draw();
 	//c1->cd(6); recLikelihood->Draw();
@@ -301,47 +364,6 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 	return 0;
 }
 
-int occupancy(int tubeID, int n50, int *tubeIDs) {
-	// In a 3x3 grid around PMT 'tubeID', what proportion of PMTs has seen a hit?
-	// TODO: Treat PMTs at the edge (that have fewer neighbors) differently!
-
-	WCSimRootPMT p = geo->GetPMT(tubeID);
-	float x = p.GetPosition(0);
-	float y = p.GetPosition(1);
-	float z = p.GetPosition(2);
-
-	int nearbyHits = 0;
-	WCSimRootPMT pmt;
-	for (int i=0; i<n50; i++) {
-		pmt = geo->GetPMT(tubeIDs[i]);
-		if (sqrt(pow(x - pmt.GetPosition(0), 2) + pow(y - pmt.GetPosition(1), 2) + pow(z - pmt.GetPosition(2), 2)) < 101) {
-			// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
-			nearbyHits++;
-		}
-	}
-
-	float ratio = nearbyHits / 9;
-
-	if (ratio < 1) {
-		return log(1 / (1-ratio)) / ratio;
-	} else {
-		return 3.0;
-	}
-}
-
-float effCoverage (int tubeID, float *bsVertex, float distance) {
-	// dependent on angle of incidence
-	WCSimRootPMT pmt = geo->GetPMT(tubeID);
-
-	// calculate theta, phi in Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
-	float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - pmt.GetPosition(0)) + pmt.GetOrientation(1)*(bsVertex[1] - pmt.GetPosition(1)) + pmt.GetOrientation(2)*(bsVertex[2] - pmt.GetPosition(2));
-	float incidentAngle = acos( dotProduct / distance);
-	float azimuthAngle = 0; // dummy value
-
-	// TODO: return S(theta, phi) as show in Fig. 4.5 (right)
-
-	return 0.4; // dummy value (equivalent to incidentAngle = 0)
-}
 
 int setPlotStyle() {
 	gStyle->SetOptStat(0);
