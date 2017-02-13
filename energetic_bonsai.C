@@ -326,7 +326,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			float eRec;
 			float a[5]= {0.82, 0.13, -1.11*pow(10, -4), 1.25*pow(10, -6), -3.42*pow(10, -9)};
 			if (nEff<189.8) {
-				for (int n=0;n<4;n++) {
+				for (int n=0;n<5;n++) {
 					eRec= a[n]*pow(nEff, n);
 				}
 			} else {
