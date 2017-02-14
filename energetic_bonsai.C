@@ -35,12 +35,12 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 #if !defined(__MAKECINT__)
 	// Load the library with class dictionary info (create with "gmake shared")
-	if (getenv ("WCSIMDIR") !=  NULL) {
+	if (getenv ("WCSIMDIR") != NULL) {
 		gSystem->Load("${WCSIMDIR}/libWCSimRoot.so");
 	} else {
 		gSystem->Load("../hk-BONSAI/libWCSimRoot.so");
 	}
-	if (getenv ("BONSAIDIR") !=  NULL) {
+	if (getenv ("BONSAIDIR") != NULL) {
 		gSystem->Load("${BONSAIDIR}/libWCSimBonsai.so");
 	} else {
 		gSystem->Load("../hk-BONSAI/libWCSimBonsai.so");
@@ -86,7 +86,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 		float distance[500];
 		float tCorrected[500];
 		float PMTX[500],PMTY[500],PMTZ[500];
-		int  n50Array[500];
+		int n50Array[500];
 		int bsCAB[500];
 		int *bsNhit;
 		int bsNsel[2];
@@ -95,7 +95,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			trigger = event->GetTrigger(index);
 			int ncherenkovdigihits = trigger->GetNcherenkovdigihits();
 			bsNhit = & ncherenkovdigihits;
-			
+
 			// get time, charge and PMT number for each WCSimRootCherenkovDigiHit in the trigger
 			for (int i=0;i<ncherenkovdigihits;i++) {
 				TObject *element = (trigger->GetCherenkovDigiHits())->At(i);
@@ -111,7 +111,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				PMTY[i] = pmt.GetPosition(1);
 				PMTZ[i] = pmt.GetPosition(2);
 			} // End of loop over Cherenkov digihits
-			
+
 			// fit vertex position and direction using BONSAI
 			bonsai->BonsaiFit( bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB, bsT, bsQ);
 
@@ -134,118 +134,89 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			// http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
 
 			for (int i=0;i<ncherenkovdigihits;i++) {// Loop through all WCSimRootCherenkovDigiHits in this trigger
-
 				// get distance of hit (=PMT position) to reconstructed vertex (bsVertex[i])
 				distance[i] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+
 				// substract time-of-flight from measured arrival time bsT[i] --> tCorrected[i]
-				
 				tCorrected[i] = bsT[i] - (distance[i]/21.58333); // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
-
 			}
-
 
 			// create a copy of tCorrected
 			float tCorrectedSort[500];
-  			
 			for (int i=0;i<500;i++) {
-				
 				tCorrectedSort[i] = tCorrected[i];
-				
 			}
 
-							
 			// sort tCorrectedSort array into ascending order
-
 			int tmp;
-
-                        for (int i=0;i<500;i++) { //Loop through tCorrected array
-
-      	              		for (int j=i+1;j<500;j++) {
-
-                        		if (tCorrectedSort[i] > tCorrectedSort[j]) {
-						// swap the values around
+			for (int i=0;i<500;i++) {
+				for (int j=i+1;j<500;j++) {
+					if (tCorrectedSort[i] > tCorrectedSort[j]) {
 						tmp = tCorrectedSort[i];
-	               	                        tCorrectedSort[i] = tCorrectedSort[j];
-       	                	                tCorrectedSort[j] = tmp;
-	                                
-                                       	}
-                               	}
-			}//end of loop through tCorrectedSort array
+						tCorrectedSort[i] = tCorrectedSort[j];
+						tCorrectedSort[j] = tmp;
+					}
+				}
+			}
 
 			int n50[500];
 			int n100[500];
-			
-			// look for the 50 ns interval with the maximum total number of hits --> start/end time: tMin, tMax50
+
+			// look for the 50 ns interval with the maximum total number of hits --> start time: tMin
 			float tMin;
-			float tMax50;
-			float tMax100;
 			int n50tmp;
 			int n100tmp;
 
-			for (int i=0;i<500;i++) { // loop each element in tCorrectedSort array; take each element as tMin and find 50 and 100 ns window
+			for (int i=0;i<500;i++) { // loop through tCorrectedSort array: take each element as tMin and find 50 and 100 ns window
 				tMin = tCorrectedSort[i];
-				tMax50 = tMin+50;
-				tMax100 = tMin + 100;
 				for (int j=0;j<500;j++) { // loop over tCorrected array to find number of hits in each window
-
-					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMax50) {
-						n50tmp++;
-					}
-
-					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMax100) {
+					if (tMin <tCorrectedSort[j] && tCorrectedSort[j] < tMin + 100) {
 						n100tmp++;
+						if (tCorrectedSort[j] < tMin + 50) n50tmp++;
 					}
-				
 				} // end of loop over tCorrectedSort array to allocate hits to 50 ns window
-			
-			//create arrays giving number of hits in each 50ns and 100ns interval
-			n50[i] = n50tmp;
-			n50tmp=0;
-			n100[i] = n100tmp;
-			n100tmp = 0;
-			
+
+				//create arrays giving number of hits in each 50ns and 100ns interval
+				n50[i] = n50tmp;
+				n50tmp=0;
+				n100[i] = n100tmp;
+				n100tmp = 0;
 			}
 
-
 			// find the maximum value in the n50 array
+			int n50Max = 0;
+			int iValue;
 
-                        int n50Max = 0;
-                        int iValue;
+			for (int i=0;i<500;i++) { //Loop through elements in the n50 array
+				if (n50[i] > n50Max) {
+					n50Max = n50[i];
+					iValue = i;
+				}
+			} // end of loop over n50 array
 
-                        for (int i=0;i<500;i++) { //Loop through elements in the n50 array
+			// find the number of hits in the 100 ns interval corresponding to the maximal 50 ns window
+			int n100Max = n100[iValue];
 
-                                if (n50[i] > n50Max) {
-
-                                        n50Max = n50[i];
-                                        iValue = i;
-                                }
-
-                        } // end of loop over n50 array
-
-
-                        // find the number of hits in the 100 ns interval corresponding to the maximal 50 ns window
-                        int n100Max = n100[iValue];
-			
 			float distance50[500];
-                        int tubeID[500];			
+			int tubeID[500];
 			int j=0;
 			// create arrays of distance from vertex in cm and tubeID for each hit in maximal interval
 			// NB arrays have 500 elements but only nMax50 elements are required
 			// TODO either change array length to n50Max, or will need to specify length when using arrays (esp tubeID)
 			for (int i=0;i<ncherenkovdigihits;i++) { // loop each hit in ncherenkovdigihits
-
 				tMin = tCorrectedSort[iValue];
-                                tMax50 = tMin+50;
-        
-                                if (tMin <tCorrected[i] && tCorrected[i] < tMax50) {
-                        		distance50[j] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
-                        		tubeID[j] = bsCAB[i];	
- 				
-				j++;
-				}	
+				if (tMin <tCorrected[i] && tCorrected[i] < tMin + 50) {
+					distance50[j] = sqrt(pow((PMTX[i]-bsVertex[0]), 2) + pow((PMTY[i]-bsVertex[1]), 2) + pow((PMTZ[i]-bsVertex[2]), 2));
+					tubeID[j] = bsCAB[i];
+					j++;
+				}
+			} // end of loop over hits
 
-                        } // end of loop over hits
-			
+			if (verbose) {
+				std::cout << "tMin: " << tMin << "\n";
+				std::cout << "n50Max: " << n50Max << "\n";
+				std::cout << "n100Max: " << n100Max << "\n";
+			}
 
 			int nPMTs = 11146; // total number of PMTs (dummy value)
 			int nWorkingPMTs = 11146; // number of working PMTs (dummy value)
@@ -255,7 +226,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			float occupancy;
 			float eRecArray[500];
 			for (i=0;i<n50Max;i++) { // loop over hits in 50 ns interval and calculate nEff
-	
+
 				// calculate occupancy to correct for multiple hits on a single PMT
 				// In a 3x3 grid around PMT 'tubeID', what proportion of PMTs has seen a hit?
 				// TODO: Treat PMTs at the edge (that have fewer neighbors) differently!
@@ -267,23 +238,21 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 				int nearbyHits = 0;
 				WCSimRootPMT pmt;
-				for (int j=0; j<n50Max; j++) { // loop through all hit pmts
+				for (int j=0; j<n50Max; j++) { // loop through all hit PMTs, count number of hits in nearby PMTs
 					pmt = geo->GetPMT(tubeID[j]);
 					if (sqrt(pow(x - pmt.GetPosition(0), 2) + pow(y - pmt.GetPosition(1), 2) + pow(z - pmt.GetPosition(2), 2)) < 101) {
 						// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
 						nearbyHits++;
-					}		
+					}
 				}
 
-
 				double ratio = float(nearbyHits) / 9;
-
 				if (ratio < 1) {
 					occupancy= log(1 / (1-ratio)) / ratio;
 				} else {
 					occupancy= 3.0;
 				}
-		
+
 
 				// correct for delayed hits (e.g. due to scattering)
 				float lateHits = (n100Max - n50Max - (nWorkingPMTs * darkRate * 50)) / float(n50Max);
@@ -292,23 +261,17 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				float darkNoise = (nWorkingPMTs * darkRate * 50) / float(n50Max);
 
 				// calculate effective coverage to correct for photoCathodeCoverage
-				
-				float effCoverage;
-				// dependent on angle of incidence
+				// this depends on angle of incidence, see Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
 				WCSimRootPMT pmt = geo->GetPMT(tubeID[i]);
-
-				// calculate theta, phi in Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
 //				float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - pmt.GetPosition(0)) + pmt.GetOrientation(1)*(bsVertex[1] - pmt.GetPosition(1)) + pmt.GetOrientation(2)*(bsVertex[2] - pmt.GetPosition(2));
 //				float incidentAngle = acos( dotProduct / distance50[i]);
 //				float azimuthAngle = 0; // dummy value
 
-				// TODO: return S(theta, phi) as show in Fig. 4.5 (right)
-				
-				effCoverage= 0.4; // dummy value (equivalent to incidentAngle = 0)
-				
+				// TODO: return S(incidentAngle, azimuthAngle) as show in Fig. 4.5 (right)
+				float effCoverage= 0.4; // dummy value (equivalent to incidentAngle = 0)
 
 				float photoCathodeCoverage = 1 / effCoverage;
-				
+
 				// correct for scattering in water
 				float waterTransparency = exp(distance50[i] / lambdaEff);
 
@@ -318,30 +281,41 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 				float nEffHit = (occupancy + lateHits - darkNoise) * photoCathodeCoverage * waterTransparency * quantumEfficiency;
 				nEff += nEffHit;
-			}
 
+				if (verbose) {
+					std::cout << "\n*** i = " << i << " ***************************************\n";
+					std::cout << "occupancy (ratio of hits in 3x3 grid): " << occupancy << " (" << ratio << ")\n";
+					std::cout << "lateHits: " << lateHits << ")\n";
+					std::cout << "darkNoise: " << darkNoise << ")\n";
+					std::cout << "photoCathodeCoverage: " << photoCathodeCoverage << ")\n";
+					std::cout << "waterTransparency: " << waterTransparency << ")\n";
+					std::cout << "quantumEfficiency: " << quantumEfficiency << ")\n";
+					std::cout << "nEff for this 1 hit: " << nEffHit << ")\n";
+				}
+			} // end of loop over hits in 50 ns interval
 
 
 			nEff *= nPMTs / float(nWorkingPMTs); // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
-			float eRec;
+
+			// reconstruct energy from nEff; this is approximately linear, except at very low energies
+			// TODO: determine fit parameters
+			float eRec = 0;
 			float a[5]= {0.82, 0.13, -1.11*pow(10, -4), 1.25*pow(10, -6), -3.42*pow(10, -9)};
 			if (nEff<189.8) {
 				for (int n=0;n<5;n++) {
-					eRec= a[n]*pow(nEff, n);
+					eRec += a[n]*pow(nEff, n);
 				}
 			} else {
 				eRec=25.00 + 0.138*(nEff-189.8);
 			}
 			recEnergy->Fill(eRec);
-			
-			FILE * fp;
-			fp = fopen("eRec.txt", "w");
-			fprintf(fp, "%f,", eRec);
-			fclose(fp);
 
-				
+			if (verbose) {
+				std::cout << "Neff = " << nEff << std::endl;
+				std::cout << "Reconstructed energy = " << eRec << std::endl;
+			}
 		} // End of loop over triggers in event
-	
+
 		// reinitialize event between loops
 		event->ReInitialize();
 
