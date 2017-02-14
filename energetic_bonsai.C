@@ -248,7 +248,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 				double ratio = float(nearbyHits) / 9;
 				if (ratio < 1) {
-					occupancy= log(1 / (1-ratio)) / ratio;
+					occupancy= log(1 / (1-ratio)) / ratio; // from Poisson statistics
 				} else {
 					occupancy= 3.0;
 				}
@@ -275,11 +275,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				// correct for scattering in water
 				float waterTransparency = exp(distance50[i] / lambdaEff);
 
-				// correct for quantum efficiency of PMT
-				// TODO: Get this from root file, once https://github.com/WCSim/WCSim/pull/198 is merged
-				float quantumEfficiency = 1/0.315; // dummy value
-
-				float nEffHit = (occupancy + lateHits - darkNoise) * photoCathodeCoverage * waterTransparency * quantumEfficiency;
+				float nEffHit = (occupancy + lateHits - darkNoise) * photoCathodeCoverage * waterTransparency;
 				nEff += nEffHit;
 
 				if (verbose) {
@@ -289,7 +285,6 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 					std::cout << "darkNoise: " << darkNoise << ")\n";
 					std::cout << "photoCathodeCoverage: " << photoCathodeCoverage << ")\n";
 					std::cout << "waterTransparency: " << waterTransparency << ")\n";
-					std::cout << "quantumEfficiency: " << quantumEfficiency << ")\n";
 					std::cout << "nEff for this 1 hit: " << nEffHit << ")\n";
 				}
 			} // end of loop over hits in 50 ns interval
