@@ -28,7 +28,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 	TH1F *recPhi = new TH1F("Reconstructed Phi", "Reconstructed Phi", 35, -3.500, 3.500);
 	TH1F *recAlpha = new TH1F("Reconstructed Alpha", "Reconstructed Alpha", 35, -3.500, 3.500);
 	TH1F *recCherenkov = new TH1F("Reconstructed Cherenkov angle", "Reconstructed Cherenkov angle", 100, -1, 1);
-	TH1F *recEnergy = new TH1F("Reconstructed Energy", "Reconstructed Energy", 25, 0, 500);
+	TH1F *recEnergy = new TH1F("Reconstructed Energy", "Reconstructed Energy", 50, 0, 100);
 	//TH1F *recEllipticity = new TH1F("Reconstructed ellipticity", "Reconstructed ellipticity", 100, -1, 1);
 	//TH1F *recLikelihood = new TH1F("Reconstructed likelihood", "Reconstructed likelihood", 100, -100, 900);
 	//TH1F *recR = new TH1F("Reconstructed R", "Reconstructed R", 200, 0, 1000);
@@ -279,7 +279,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				nEff += nEffHit;
 
 				if (verbose) {
-					std::cout << "\n*** i = " << i << " ***************************************\n";
+					std::cout << "\n*** event #" << ev << ", PMT hit #" << i << " ***************************************\n";
 					std::cout << "occupancy (ratio of hits in 3x3 grid): " << occupancy << " (" << ratio << ")\n";
 					std::cout << "lateHits: " << lateHits << ")\n";
 					std::cout << "darkNoise: " << darkNoise << ")\n";
@@ -295,14 +295,14 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			// reconstruct energy from nEff; this is approximately linear, except at very low energies
 			// TODO: determine fit parameters
 			float eRec = 0;
-			float a[5]= {0.82, 0.13, -1.11*pow(10, -4), 1.25*pow(10, -6), -3.42*pow(10, -9)};
-			if (nEff<189.8) {
-				for (int n=0;n<5;n++) {
-					eRec += a[n]*pow(nEff, n);
-				}
-			} else {
-				eRec=25.00 + 0.138*(nEff-189.8);
-			}
+// 			float a[5]= {0.82, 0.13, -1.11*pow(10, -4), 1.25*pow(10, -6), -3.42*pow(10, -9)};
+// 			if (nEff<189.8) {
+// 				for (int n=0;n<5;n++) {
+// 					eRec += a[n]*pow(nEff, n);
+// 				}
+// 			} else {
+				eRec=(25.00 + 0.138*(nEff-189.8))*0.378; // TODO: dummy value; needs to be determined/tested much more precisely!
+// 			}
 			recEnergy->Fill(eRec);
 
 			if (verbose) {
