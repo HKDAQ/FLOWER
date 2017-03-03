@@ -170,7 +170,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			for (int i=0;i<500;i++) { // loop through tCorrectedSort array: take each element as tMin and find 50 and 100 ns window
 				tMin = tCorrectedSort[i];
 				for (int j=i;j<500;j++) { // loop over tCorrected array to find number of hits in each window
-					if (tMin <= tCorrectedSort[j] && tCorrectedSort[j] < tMin + 100) {
+					if (tMin < tCorrectedSort[j] && tCorrectedSort[j] < tMin + 100) {
 						n100tmp++;
 						if (tCorrectedSort[j] < tMin + 50) n50tmp++;
 					}
