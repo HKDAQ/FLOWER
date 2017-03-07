@@ -226,21 +226,19 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 			float occupancy;
 			float eRecArray[500];
 			for (i=0;i<n50Max;i++) { // loop over hits in 50 ns interval and calculate nEff
+				WCSimRootPMT pmt = geo->GetPMT(tubeID[i]);
+				float x = pmt.GetPosition(0);
+				float y = pmt.GetPosition(1);
+				float z = pmt.GetPosition(2);
 
 				// calculate occupancy to correct for multiple hits on a single PMT
 				// In a 3x3 grid around PMT 'tubeID', what proportion of PMTs has seen a hit?
 				// TODO: Treat PMTs at the edge (that have fewer neighbors) differently!
-
-				WCSimRootPMT p = geo->GetPMT(tubeID[i]);
-				float x = p.GetPosition(0);
-				float y = p.GetPosition(1);
-				float z = p.GetPosition(2);
-
 				int nearbyHits = 0;
-				WCSimRootPMT pmt;
+				WCSimRootPMT otherPMT;
 				for (int j=0; j<n50Max; j++) { // loop through all hit PMTs, count number of hits in nearby PMTs
-					pmt = geo->GetPMT(tubeID[j]);
-					if (sqrt(pow(x - pmt.GetPosition(0), 2) + pow(y - pmt.GetPosition(1), 2) + pow(z - pmt.GetPosition(2), 2)) < 101) {
+					otherPMT = geo->GetPMT(tubeID[j]);
+					if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + pow(y - otherPMT.GetPosition(1), 2) + pow(z - otherPMT.GetPosition(2), 2)) < 101) {
 						// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
 						nearbyHits++;
 					}
@@ -262,15 +260,14 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 
 				// calculate effective coverage to correct for photoCathodeCoverage
 				// this depends on angle of incidence, see Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
-				WCSimRootPMT pmt = geo->GetPMT(tubeID[i]);
-//				float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - pmt.GetPosition(0)) + pmt.GetOrientation(1)*(bsVertex[1] - pmt.GetPosition(1)) + pmt.GetOrientation(2)*(bsVertex[2] - pmt.GetPosition(2));
-//				float incidentAngle = acos( dotProduct / distance50[i]);
-//				float azimuthAngle = 0; // dummy value
-
-				// TODO: return S(incidentAngle, azimuthAngle) as show in Fig. 4.5 (right)
-				float effCoverage= 0.4; // dummy value (equivalent to incidentAngle = 0)
-
-				float photoCathodeCoverage = 1 / effCoverage;
+				// TODO: take into account azimuthal dependence as show in Fig. 4.5 (right); currently assumes phi=0
+				float dotProduct = pmt.GetOrientation(0)*(bsVertex[0] - x) + pmt.GetOrientation(1)*(bsVertex[1] - y) + pmt.GetOrientation(2)*(bsVertex[2] - z);
+				float theta = acos( dotProduct / distance50[i]) * 180 / 3.14159265;
+				if (theta > 89.99) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
+				if (theta < 0) theta = 0; // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
+//				float phi = 0; // dummy value
+				const float effCoverages[] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
+				float photoCathodeCoverage = 1 / effCoverages[int(theta/10)];
 
 				// correct for scattering in water
 				float waterTransparency = exp(distance50[i] / lambdaEff);
@@ -281,11 +278,11 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false) {
 				if (verbose) {
 					std::cout << "\n*** event #" << ev << ", PMT hit #" << i << " ***************************************\n";
 					std::cout << "occupancy (ratio of hits in 3x3 grid): " << occupancy << " (" << ratio << ")\n";
-					std::cout << "lateHits: " << lateHits << ")\n";
-					std::cout << "darkNoise: " << darkNoise << ")\n";
-					std::cout << "photoCathodeCoverage: " << photoCathodeCoverage << ")\n";
-					std::cout << "waterTransparency: " << waterTransparency << ")\n";
-					std::cout << "nEff for this 1 hit: " << nEffHit << ")\n";
+					std::cout << "lateHits:  " << lateHits << "\n";
+					std::cout << "darkNoise: " << darkNoise << "\n";
+					std::cout << "photoCathodeCoverage: " << photoCathodeCoverage << "\n";
+					std::cout << "waterTransparency: " << waterTransparency << "\n";
+					std::cout << "nEff for this 1 hit: " << nEffHit << "\n";
 				}
 			} // end of loop over hits in 50 ns interval
 
