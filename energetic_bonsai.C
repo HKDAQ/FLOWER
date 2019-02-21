@@ -276,6 +276,16 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 				std::cout << "Neff = " << nEff << std::endl;
 				std::cout << "Reconstructed energy = " << eRec << std::endl;
 			}
+
+			// Free the memory used by these vectors
+			vector<int>().swap(bsCAB);
+			vector<int>().swap(tubeID);
+			vector<float>().swap(distance50);
+			vector<float>().swap(tCorrected_sorted);
+			vector<float>().swap(bsT);
+			vector<float>().swap(bsQ);
+			vector<float>().swap(distance);
+			vector<float>().swap(tCorrected);
 		} // End of loop over triggers in event
 
 		// reinitialize event between loops
