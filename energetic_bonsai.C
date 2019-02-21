@@ -257,17 +257,19 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 			nEff *= nPMTs / float(nWorkingPMTs); // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
 
 			// reconstruct energy from nEff; this is approximately linear, except at very low energies
-			// TODO: determine fit parameters
-// 			float a[5]= {0.82, 0.13, -1.11*pow(10, -4), 1.25*pow(10, -6), -3.42*pow(10, -9)};
-// 			if (nEff<189.8) {
-// 				for (int n=0;n<5;n++) {
-// 					eRec += a[n]*pow(nEff, n);
-// 				}
-// 			} else {
-				eRec=(25.00 + 0.138*(nEff-189.8))*0.378; // TODO: dummy value; needs to be determined/tested much more precisely!
-// 			}
+			// TODO: determine fit parameters more precisely, this is just a rough approximation
+			if (nEff<392) {
+				eRec = 0.00002*pow(nEff, 2) + 0.039*nEff + 1.67;
+			} else {
+				eRec = 0.0522*nEff - 0.46;
+			}
+
 			if (is_HK) {
-				eRec = eRec /2.584; // TODO: HK observes more photons for a given energy due to different PMTs etc.
+				if (nEff<945) {
+					eRec = 0.02177*nEff + 0.237;
+				} else {
+					eRec = 0.02270*nEff - 0.639;
+				}
 			}
 
 			recEnergy->Fill(eRec);
