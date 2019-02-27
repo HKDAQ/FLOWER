@@ -1,4 +1,5 @@
 //C++
+#include <algorithm> // std::sort
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,7 +72,7 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 	float x,y,z, ratio, occupancy, ttmp, tStart, lateHits, darkRate, darkNoise, dotProduct, theta, photoCoverage, waterTransparency, nEffHit, nEff, eRec;
 	float lambdaEff = 100*100; // scattering length in cm (based on Design Report II.2.E.1)
 	const float effCoverages[] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
-	WCSimRootPMT pmt, otherpmt;
+	WCSimRootPMT pmt, otherPMT;
 
 	// Loop over events
 	for (int ev=0; ev < tree->GetEntries(); ev++) {
@@ -280,14 +281,14 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 			}
 
 			// Free the memory used by these vectors
-			vector<int>().swap(bsCAB);
-			vector<int>().swap(tubeID);
-			vector<float>().swap(distance50);
-			vector<float>().swap(tCorrected_sorted);
-			vector<float>().swap(bsT);
-			vector<float>().swap(bsQ);
-			vector<float>().swap(distance);
-			vector<float>().swap(tCorrected);
+			std::vector<int>().swap(bsCAB);
+			std::vector<int>().swap(tubeID);
+			std::vector<float>().swap(distance50);
+			std::vector<float>().swap(tCorrected_sorted);
+			std::vector<float>().swap(bsT);
+			std::vector<float>().swap(bsQ);
+			std::vector<float>().swap(distance);
+			std::vector<float>().swap(tCorrected);
 		} // End of loop over triggers in event
 
 		// reinitialize event between loops
