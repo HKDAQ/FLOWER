@@ -1,8 +1,10 @@
 //C++
 #include <algorithm> // std::sort
 #include <iostream>
+#include <math.h> // pow
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include <vector>
 //ROOT
 #include <TH1F.h>
@@ -21,7 +23,7 @@
 #endif
 
 // low energy reconstruction
-int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is_HK=false) {
+int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, char *detector="SuperK") {
 	// set up histogram
 	TH1F *recEnergy = new TH1F("Reconstructed Energy", "Reconstructed Energy", 50, 0, 100);
 
@@ -38,6 +40,22 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 		gSystem->Load("../hk-BONSAI/libWCSimBonsai.so");
 	}
 #endif
+
+	// Determine detector configuration
+	bool is_HK = false; // HyperK with 40 per cent photocoverage
+	bool is_HK20 = false; // HyperK with 20 per cent photocoverage
+	if (detector == "SuperK") {
+		if (verbose) std::cout << "Detector: SuperK (default)" << std::endl;
+	} else if (detector == "HyperK") {
+		is_HK = true;
+		if (verbose) std::cout << "Detector: is_HK" << std::endl;
+	} else if (detector == "HyperK_20perCent") {
+		is_HK20 = true;
+		if (verbose) std::cout << "Detector: is_HK20" << std::endl;
+	} else {
+		std::cout << "ERROR: Detector '" << detector << "' unknown. Aborting ..." << std::endl;
+		return -1;
+	}
 
 	WCSimBonsai* bonsai = new WCSimBonsai();
 
@@ -66,10 +84,9 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 	float bsVertex[4],bsResult[6], bsGood[3];
 	int *bsNhit;
 	int bsNsel[2];
-
 	// used for energy reconstruction
 	int i, j, ncherenkovdigihits, n50tmp, n100tmp, n50Max, n100Max, nPMTs, nWorkingPMTs, nearbyHits;
-	float x,y,z, ratio, occupancy, ttmp, tStart, lateHits, darkRate, darkNoise, dotProduct, theta, photoCoverage, waterTransparency, nEffHit, nEff, eRec;
+	float x,y,z, ratio, occupancy, ttmp, tStart, lateHits, darkRate, darkNoise, dotProduct, theta, photoCoverage, waterTransparency, nEffHit, nEff, nEffHit2, nEff2, eRec;
 	float lambdaEff = 100*100; // scattering length in cm (based on Design Report II.2.E.1)
 	const float effCoverages[] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 	WCSimRootPMT pmt, otherPMT;
@@ -87,13 +104,16 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 
 		// Loop over triggers in the event
 		for (int index = 0 ; index < event->GetNumberOfEvents(); index++) {
-			// TODO: NDigits trigger in WCSim is not optimized for HK, sometimes adds a second trigger for noise. We ignore those here.
+			// We don't have secondary decays so shouldn't observe more than 1 trigger per event.
+			// If we do, it's noise (because the NDigits trigger in WCSim is not optimized for HK).
+			// Those would get filtered later in energy cuts, but for simplicity, we ignore them here.
 			if (index == 1) continue;
 
 			trigger = event->GetTrigger(index);
 			ncherenkovdigihits = trigger->GetNcherenkovdigihits();
+			if (verbose) std::cout << "ncherenkovdigihits: " << ncherenkovdigihits << std::endl;
 			if (ncherenkovdigihits == 0) {
-				std::cout << "t, PID, 0, 0, 0, 0\n";
+				std::cout << "t, PID, 0, 0, 0, 0" << std::endl;
 				continue;
 			}
 			std::vector<float> bsT (ncherenkovdigihits,0);
@@ -119,7 +139,9 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 			float* bsT_a = &bsT[0];
 			float* bsQ_a = &bsQ[0];
 
+			if (verbose) std::cout << "Fitting event vertex with hk-BONSAI ..." << std::endl;
 			bonsai->BonsaiFit(bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB_a, bsT_a, bsQ_a);
+			if (verbose) std::cout << "Done!" << std::endl;
 
 
 			// ****************************************
@@ -162,7 +184,6 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 				}
 			}
 
-
 			// Create arrays of distance from vertex (in cm) and tubeID for each hit in 50 ns interval
 			std::vector<float> distance50 (n50Max,0);
 			std::vector<int> tubeID (n50Max,0);
@@ -181,16 +202,19 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 				std::cout << "n100Max: " << n100Max << "\n";
 			}
 
-			// TODO: these are detector-dependent
 			nPMTs = 11146; // total number of PMTs
 			darkRate = 4.2/1000000; // dark noise rate (per ns) of the PMT (8.4kHz for B&L PMT)
 			if (is_HK) {
 				nPMTs = 38448;
 				darkRate = 8.4/1000000;
+			} else if (is_HK20) {
+				nPMTs = 19462;
+				darkRate = 8.4/1000000;
 			}
 
 			nWorkingPMTs = nPMTs; // number of working PMTs (may be lower in real detector due to defects)
 			nEff = 0; // effective number of hits
+			nEff2 = 0; // effective number of hits
 
 			for (i=0; i<n50Max; i++) { // loop over hits in 50 ns interval and calculate nEff
 				pmt = geo->GetPMT(tubeID[i]);
@@ -201,26 +225,31 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 				// Calculate occupancy to correct for multiple hits on a single PMT:
 				// In a 3x3 grid around PMT 'tubeID', what proportion of PMTs has seen a hit?
 				nearbyHits = 0;
+
+				// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
+				int dNeighbour = 102;
+				if (is_HK20) dNeighbour = 145; // half as many PMTs, so distance is sqrt(2) higher
 				for (j=0; j<n50Max; j++) { // loop through all hit PMTs, count number of hits in nearby PMTs
+					if (j == i) continue; // don't count the current PMT itself
 					otherPMT = geo->GetPMT(tubeID[j]);
-					if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + pow(y - otherPMT.GetPosition(1), 2) + pow(z - otherPMT.GetPosition(2), 2)) < 101) {
-						// distance to neighboring PMTs is 70.71 cm (100 cm diagonally)
+					if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + pow(y - otherPMT.GetPosition(1), 2) + pow(z - otherPMT.GetPosition(2), 2)) < dNeighbour) {
 						nearbyHits++;
 					}
 				}
 
 				ratio = nearbyHits / 8.0;
 				// PMTs at the top/bottom edge of the barrel only have five neighbours
-				if ((z < 2690)&&(z>2670) || (z > -2690)&&(z < -2670)) {
+				if ((z<2690 && z>2670) || (z>-2690 && z<-2670)) {
 					ratio = nearbyHits / 5.0;
 				} // TODO: deal with PMTs at the edge of the top/bottom
 
-				if (ratio < 1) {
+				if (ratio == 0) {
+					occupancy = 1.0;
+				} else if (ratio < 1) {
 					occupancy = log(1 / (1-ratio)) / ratio; // from Poisson statistics
 				} else {
 					occupancy = 3.0;
 				}
-
 
 				// correct for delayed hits (e.g. due to scattering)
 				lateHits = (n100Max - n50Max - (nWorkingPMTs * darkRate * 50)) / n50Max;
@@ -236,12 +265,16 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 				if (theta > 89.99) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
 				if (theta < 0) theta = 0; // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
 				photoCoverage = 1 / effCoverages[int(theta/10)];
+				if (is_HK20) photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
 
 				// correct for scattering in water
 				waterTransparency = exp(distance50[i] / lambdaEff);
 
 				nEffHit = (occupancy + lateHits - darkNoise) * photoCoverage * waterTransparency;
 				nEff += nEffHit;
+				// ad-hoc modification for low photocoverage
+				nEffHit2 = (pow(occupancy, 1.4) + lateHits - darkNoise) * photoCoverage * waterTransparency;
+				nEff2 += nEffHit2;
 
 				if (verbose) {
 					std::cout << "\n*** event #" << ev << ", PMT hit #" << i << " ***************************************\n";
@@ -256,9 +289,9 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 
 
 			nEff *= nPMTs / float(nWorkingPMTs); // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
+			nEff2 *= nPMTs / float(nWorkingPMTs); // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
 
 			// reconstruct energy from nEff; this is approximately linear, except at very low energies
-			// TODO: determine fit parameters more precisely, this is just a rough approximation
 			if (nEff<392) {
 				eRec = 0.00002*pow(nEff, 2) + 0.039*nEff + 1.67;
 			} else {
@@ -266,10 +299,18 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 			}
 
 			if (is_HK) {
-				if (nEff<945) {
-					eRec = 0.02177*nEff + 0.237;
+				if (nEff<1320) {
+					eRec = 0.02360*nEff + 0.082;
 				} else {
-					eRec = 0.02270*nEff - 0.639;
+					eRec = 0.02524*nEff - 2.081;
+				}
+			} else if (is_HK20) {
+				if (nEff<701) {
+					// use nEff, as normal
+					eRec = 0.00000255*pow(nEff, 2) + 0.0215*nEff + 0.429;
+				} else {
+					// use nEff2 (with occupancy to power of 1.4)
+					eRec = 0.000001148*pow(nEff2, 2) + 0.02032*nEff2 + 1.94;
 				}
 			}
 
@@ -279,6 +320,15 @@ int energetic_bonsai(char *filename="../wcsim.root", bool verbose=false, bool is
 				std::cout << "Neff = " << nEff << std::endl;
 				std::cout << "Reconstructed energy = " << eRec << std::endl;
 			}
+
+			// reconstructed lepton direction (bsResult[0] is theta, bsResult[1] is phi)
+			x = sin(bsResult[0]) * cos(bsResult[1]);
+			y = sin(bsResult[0]) * sin(bsResult[1]);
+			z = cos(bsResult[0]);
+
+			// Print out reconstruction results in the format `time, PID, energy, direction (xyz), vertex (xyz)`
+			// PID (i.e. electron vs. positron) and absolute time (as opposed to time relative to the trigger window) are not available.
+			std::cout << "t, PID, " << eRec << ", " << x << ", " << y << ", " << z << ", " << bsVertex[0] << ", " << bsVertex[1] << ", " << bsVertex[2] << std::endl;
 
 			// Free the memory used by these vectors
 			std::vector<int>().swap(bsCAB);
