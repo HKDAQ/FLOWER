@@ -2,9 +2,9 @@
 Energy reconstruction script that works with (hk-)BONSAI
 
 ## Compiling
-Make sure the following are sources
+Make sure the following are sourced
 * WCSim (`$WCSIMDIR` set)
-* BONSAI (`$BONSAIDIR` set)
+
 Then
 ```bash
 export EBONSAIDIR=/path/to/energetic-bonsai
@@ -12,7 +12,12 @@ make
 ```
 
 ## Running
+Make sure the following are sourced
+* WCSim (`$WCSIMDIR` set)
+* BONSAI (`$BONSAIDIR` set)
+* energetic_bonsai (`$EBONSAIDIR` set)
 
+Then
 ```bash
 export EBONSAIDIR=/path/to/energetic-bonsai
 export PATH=$EBONSAIDIR:$PATH
