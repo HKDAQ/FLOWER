@@ -13,6 +13,7 @@
 #include <TTree.h>
 #include <TCanvas.h>
 #include <TSystem.h>
+#include <TStopwatch.h>
 
 #if !defined(__CINT__) || defined(__MAKECINT__)
 //WCSim
@@ -26,7 +27,7 @@
 // low energy reconstruction
 int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const char *detector="SuperK") {
 	// set up histogram
-	TH1F *recEnergy = new TH1F("Reconstructed Energy", "Reconstructed Energy", 50, 0, 100);
+	TH1F *recEnergy = new TH1F("hErec", "Reconstructed Energy", 50, 0, 100);
 
 #if !defined(__MAKECINT__)
 	// Load the library with class dictionary info (create with "gmake shared")
@@ -81,6 +82,8 @@ int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const 
 	int bsNsel[2];
 
 	// Loop over events
+	cout << "Starting timer for the event loop" << endl;
+	TStopwatch timer;
 	for (int ev=0; ev < tree->GetEntries(); ev++) {
 		if (verbose) std::cout << "event number: " << ev << std::endl;
 
@@ -131,8 +134,12 @@ int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const 
 
 			if (verbose) std::cout << "Fitting event vertex with hk-BONSAI ..." << std::endl;
 			bonsai->BonsaiFit(bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB_a, bsT_a, bsQ_a);
-			if (verbose) std::cout << "BONSAI done!" << std::endl;
-
+			if (verbose){
+			  std::cout << "Vertex found at:";
+			  for(int iv = 0; iv < 4; iv++)
+			    std::cout << " " << bsVertex[iv];
+			  std::cout << std::endl << "BONSAI done!" << std::endl;
+			}
 
 			// Energy estimation for this trigger
 			eRec = energetic_bonsai->GetEnergy(bsT, bsCAB, &bsVertex[0]);
@@ -157,6 +164,7 @@ int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const 
 		// reinitialize event between loops
 		event->ReInitialize();
 	} // End of loop over events
+	timer.Print();
 
 	// display histograms
 	float winScale = 0.75;
@@ -166,6 +174,7 @@ int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const 
 	c1->Draw();
 	c1->Divide(nWide, nHigh);
 	c1->cd(1); recEnergy->Draw();
+	c1->SaveAs("Erec.pdf");
 
 	return 0;
 }
