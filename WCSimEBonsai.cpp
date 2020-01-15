@@ -8,7 +8,7 @@ using std::cout;
 using std::endl;
 using std::cerr;
 
-const double WCSimEBonsai::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
+const float WCSimEBonsai::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 
 WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int verbose)
   : fLightGroupSpeed(21.58333), // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
@@ -80,7 +80,7 @@ WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int 
   GetNearestNeighbours();
 }
 
-void WCSimEBonsai::SetDarkRate(double darkrate)
+void WCSimEBonsai::SetDarkRate(float darkrate)
 {
   fDarkRate = darkrate;
   cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
@@ -99,25 +99,25 @@ void WCSimEBonsai::SetNWorkingPMTs(int nworkingpmts)
   cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
 }
 
-void WCSimEBonsai::SetNeighbourDistance(double neighbourdistance)
+void WCSimEBonsai::SetNeighbourDistance(float neighbourdistance)
 {
   fNeighbourDistance = neighbourdistance;
   cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
 }
 
-void WCSimEBonsai::SetShortDuration(double shortduration)
+void WCSimEBonsai::SetShortDuration(float shortduration)
 {
   fShortDuration = shortduration;
   cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
 }
 
-void WCSimEBonsai::SetLongDuration(double longduration)
+void WCSimEBonsai::SetLongDuration(float longduration)
 {
   fLongDuration = longduration;
   cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
 }
 
-void WCSimEBonsai::SetTopBottomDistance(double hi, double lo)
+void WCSimEBonsai::SetTopBottomDistance(float hi, float lo)
 {
   if(abs(lo) <= abs(hi)) {
     fTopBottomDistanceLo = abs(lo);
@@ -145,7 +145,7 @@ WCSimEBonsai::kDetector_t WCSimEBonsai::DetectorEnumFromString(std::string name)
   exit(-1);
 }
 
-double WCSimEBonsai::GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex)
+float WCSimEBonsai::GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex)
 {
   assert(times.size() == tubeIds.size());
   fNDigits = times.size();
@@ -172,7 +172,7 @@ double WCSimEBonsai::GetEnergy(std::vector<float> times, std::vector<int> tubeId
 void WCSimEBonsai::CorrectHitTimes()
 {
   // Correct all hit times for time-of-flight between vertex and PMT
-  double x, y, z;
+  float x, y, z;
   WCSimRootPMT pmt;
   for (unsigned int i = 0; i < fNDigits; i++) {
     pmt = fGeom->GetPMT(fTubeIds[i] - 1);
@@ -196,7 +196,7 @@ void WCSimEBonsai::FindMaxTimeInterval()
   fNMaxShort = 0;
   fNMaxLong  = 0;
   int nshort, nlong;
-  double time;
+  float time;
   for (unsigned int i = 0; i < fNDigits; i++) {
     // count hits within 50 and 100 ns after each entry
     nshort = 0;
@@ -235,14 +235,17 @@ void WCSimEBonsai::FindMaxTimeInterval()
   if(fVerbose)
     std::cout << "Maximum of " << fNMaxShort << " hits in " 
 	      << fShortDuration << " ns window starting at "
-	      << fStartTime << " ns" << std::endl;
+	      << fStartTime << " ns" << std::endl
+	      << "In extended " << fLongDuration
+	      << " ns window there are " << fNMaxLong
+	      << " hits" << std::endl;
 }
 
 void WCSimEBonsai::GetNearestNeighbours()
 {
   WCSimRootPMT pmt, otherPMT;
   int tubeID_i, tubeID_j;
-  double x, y, z;
+  float x, y, z;
   for (unsigned int i = 0; i < fNPMTs; i++) {
     pmt = fGeom->GetPMT(i);
     tubeID_i = pmt.GetTubeNo();
@@ -277,8 +280,8 @@ void WCSimEBonsai::GetNearestNeighbours()
 void WCSimEBonsai::GetNEff()
 {
   int nearbyHits, tubeID;
-  double ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency;
-  double nEffHit, nEffHit2, x, y, z;
+  float ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency;
+  float nEffHit, nEffHit2, x, y, z;
   vector<int> neighbours;
   WCSimRootPMT pmt;
   fNEff = 0;
@@ -323,14 +326,14 @@ void WCSimEBonsai::GetNEff()
     // calculate effective coverage to correct for photoCoverage
     // this depends on angle of incidence, see Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
     // TODO: take into account azimuthal dependence as show in Fig. 4.5 (right); currently assumes phi=0
-    double dotProduct = pmt.GetOrientation(0)*(fVertex[0] - x) +
+    float dotProduct = pmt.GetOrientation(0)*(fVertex[0] - x) +
       pmt.GetOrientation(1)*(fVertex[1] - y) +
       pmt.GetOrientation(2)*(fVertex[2] - z);
-    double theta = acos( dotProduct / fDistanceShort[i]) * 180 / 3.14159265;
+    float theta = acos( dotProduct / fDistanceShort[i]) * 180 / 3.14159265;
     if (theta > 89.99) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
     if (theta < 0) theta = 0; // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
     
-    photoCoverage = 1 / fEffCoverages[int(theta/10)];
+    photoCoverage = 1 / WCSimEBonsai::fEffCoverages[int(theta/10)];
     if (fDetector == kHyperK20)
       photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
 
@@ -344,7 +347,7 @@ void WCSimEBonsai::GetNEff()
     fNEff2 += nEffHit2;
     
     if (fVerbose > 1) {
-      std::cout << "\n*** PMT hit #" << i << " ***************************************\n";
+      std::cout << "\n*** PMT hit #" << i << " on tube " << tubeID << " ***************************************\n";
       std::cout << "occupancy (ratio of hits in 3x3 grid): " << occupancy << " (" << ratio << ")\n";
       std::cout << "lateHits:  " << lateHits << "\n";
       std::cout << "darkNoise: " << darkNoise << "\n";
@@ -356,8 +359,8 @@ void WCSimEBonsai::GetNEff()
 
 
  // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
-  fNEff  *= fNPMTs / double(fNWorkingPMTs);
-  fNEff2 *= fNPMTs / double(fNWorkingPMTs);
+  fNEff  *= fNPMTs / float(fNWorkingPMTs);
+  fNEff2 *= fNPMTs / float(fNWorkingPMTs);
 
   if(fVerbose) {
     std::cout << endl << "***************************************" << endl
@@ -374,6 +377,7 @@ void WCSimEBonsai::CorrectEnergy()
       fERec = 0.00002*pow(fNEff, 2) + 0.039*fNEff + 1.67;
     else
       fERec = 0.0522*fNEff - 0.46;
+    break;
   case kHyperK40:
     if (fNEff<1320)
       fERec = 0.02360*fNEff + 0.082;
@@ -387,6 +391,7 @@ void WCSimEBonsai::CorrectEnergy()
     else
       // use fNEff2 (with occupancy to power of 1.4)
       fERec = 0.000001148*pow(fNEff2, 2) + 0.02032*fNEff2 + 1.94;
+    break;
   }
   if(fVerbose) {
     std::cout << "Reconstructed energy = " << fERec << " MeV" << std::endl;

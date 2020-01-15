@@ -22,16 +22,16 @@ class WCSimEBonsai {
   WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int verbose);
   ~WCSimEBonsai() {};
 
-  double GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
+  float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
 
   //override default values with these methods
-  void SetDarkRate(double darkrate);
+  void SetDarkRate(float darkrate);
   void SetNPMTs   (int npmts);
   void SetNWorkingPMTs(int nworkingpmts);
-  void SetNeighbourDistance(double neighbourdistance);
-  void SetShortDuration(double shortduration);
-  void SetLongDuration(double longduration);
-  void SetTopBottomDistance(double hi, double lo);
+  void SetNeighbourDistance(float neighbourdistance);
+  void SetShortDuration(float shortduration);
+  void SetLongDuration(float longduration);
+  void SetTopBottomDistance(float hi, float lo);
 
  private:
   enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20};
@@ -43,18 +43,18 @@ class WCSimEBonsai {
   void GetNEff();
   void CorrectEnergy();
 
-  const double fLightGroupSpeed;
-  const double fLambdaEff;
-  static const double fEffCoverages[9];
+  const float fLightGroupSpeed;
+  const float fLambdaEff;
+  static const float fEffCoverages[9];
 
   std::string fDetectorName;
   kDetector_t fDetector;
-  double    fDarkRate;
+  float    fDarkRate;
   int       fNPMTs;
   int       fNWorkingPMTs;
-  double    fNeighbourDistance;
-  double    fTopBottomDistanceHi;
-  double    fTopBottomDistanceLo;
+  float    fNeighbourDistance;
+  float    fTopBottomDistanceHi;
+  float    fTopBottomDistanceLo;
   int       fVerbose;
 
   WCSimRootGeom * fGeom;
@@ -62,23 +62,23 @@ class WCSimEBonsai {
   int    fNDigits;
   int    fNMaxShort;
   int    fNMaxLong;
-  double fLongDuration;
-  double fShortDuration;
-  double fStartTime;
+  float fLongDuration;
+  float fShortDuration;
+  float fStartTime;
   float  fVertex[4];
 
-  double fNEff;
-  double fNEff2;
-  double fERec;
+  float fNEff;
+  float fNEff2;
+  float fERec;
 
   vector<int>    fTubeIds;
-  vector<double> fDistance;
+  vector<float> fDistance;
   vector<float>  fTimes;
   vector<float>  fTimesCorrected;
   vector<float>  fTimesCorrectedSorted;
 
-  vector<double> fDistanceShort;
-  vector<double> fTubeIdsShort;
+  vector<float> fDistanceShort;
+  vector<float> fTubeIdsShort;
 
   std::map<int, std::vector<int> > fNeighbours;
 };
