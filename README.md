@@ -41,7 +41,7 @@ void SetShortDuration(double shortduration);
 void SetLongDuration(double longduration);
 void SetTopBottomDistance(double hi, double lo);
 ```
-* Every event/trigger, send it a list of hit times, hit tube IDs, and reconstructed vertex position
+* Every event/trigger, send it a list of hit times, hit tube IDs, and reconstructed vertex position (x,y,z)
 ```
 double GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
 ```

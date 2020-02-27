@@ -158,7 +158,7 @@ float WCSimEBonsai::GetEnergy(std::vector<float> times, std::vector<int> tubeIds
 
   fTimes   = times;
   fTubeIds = tubeIds;
-  for(int i = 0; i < 4; i++)
+  for(int i = 0; i < 3; i++)
     fVertex[i]  = vertex[i];
 
   CorrectHitTimes();

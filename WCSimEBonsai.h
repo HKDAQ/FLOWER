@@ -65,7 +65,7 @@ class WCSimEBonsai {
   float fLongDuration;
   float fShortDuration;
   float fStartTime;
-  float  fVertex[4];
+  float  fVertex[3];
 
   float fNEff;
   float fNEff2;
