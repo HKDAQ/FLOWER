@@ -313,6 +313,7 @@ void WCSimEBonsai::GetNearestNeighbours(bool overwrite_root_file)
       t->Fill();
     }//ipmt
     t->Write();
+    delete t;
   }//calculating values
   if(fVerbose > 1)
     cout << "GetNearestNeighbours() finished" << endl;
