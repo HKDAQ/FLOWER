@@ -25,7 +25,11 @@
 #endif
 
 // low energy reconstruction
-int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const char *detector="SuperK") {
+int energetic_bonsai(const char *filename="../wcsim.root",
+		     const int verbose=1,
+		     const bool overwrite_nearest = false,
+		     const char *detector="SuperK")
+{
 	// set up histogram
 	TH1F *recEnergy = new TH1F("hErec", "Reconstructed Energy", 50, 0, 100);
 
@@ -65,7 +69,7 @@ int energetic_bonsai(const char *filename="../wcsim.root", int verbose=1, const 
 	geotree->GetEntry(0);
 	bonsai->Init(geo);
 
-	WCSimEBonsai * energetic_bonsai = new WCSimEBonsai(detector, geo, verbose);
+	WCSimEBonsai * energetic_bonsai = new WCSimEBonsai(detector, geo, overwrite_nearest, verbose);
 
 	TTree *tree = (TTree*)file->Get("wcsimT"); // Get a pointer to the tree from the file
 	WCSimRootEvent* event = new WCSimRootEvent(); // Create WCSimRootEvent to put stuff from the tree in
