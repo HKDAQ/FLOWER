@@ -19,7 +19,7 @@ using std::vector;
 class WCSimEBonsai {
 
  public:
-  WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int verbose);
+  WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose);
   ~WCSimEBonsai() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
@@ -28,7 +28,7 @@ class WCSimEBonsai {
   void SetDarkRate(float darkrate);
   void SetNPMTs   (int npmts);
   void SetNWorkingPMTs(int nworkingpmts);
-  void SetNeighbourDistance(float neighbourdistance);
+  void SetNeighbourDistance(float neighbourdistance, bool overwrite_nearest);
   void SetShortDuration(float shortduration);
   void SetLongDuration(float longduration);
   void SetTopBottomDistance(float hi, float lo);
@@ -39,7 +39,7 @@ class WCSimEBonsai {
   kDetector_t DetectorEnumFromString(std::string name);
   void CorrectHitTimes();
   void FindMaxTimeInterval();
-  void GetNearestNeighbours();
+  void GetNearestNeighbours(bool overwrite_root_file);
   void GetNEff();
   void CorrectEnergy();
 

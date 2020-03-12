@@ -4,13 +4,16 @@
 #include <cassert>
 #include <algorithm>
 
+#include "TFile.h"
+#include "TTree.h"
+
 using std::cout;
 using std::endl;
 using std::cerr;
 
 const float WCSimEBonsai::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 
-WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int verbose)
+WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
   : fLightGroupSpeed(21.58333), // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
@@ -77,7 +80,7 @@ WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int 
   fTimesCorrected      .reserve(fNPMTs);
   fTimesCorrectedSorted.reserve(fNPMTs);
 
-  GetNearestNeighbours();
+  GetNearestNeighbours(overwrite_nearest);
 }
 
 void WCSimEBonsai::SetDarkRate(float darkrate)
@@ -99,10 +102,11 @@ void WCSimEBonsai::SetNWorkingPMTs(int nworkingpmts)
   cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
 }
 
-void WCSimEBonsai::SetNeighbourDistance(float neighbourdistance)
+void WCSimEBonsai::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
 {
-  fNeighbourDistance = neighbourdistance;
+  fNeighbourDistance = neighbour_distance;
   cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
+  GetNearestNeighbours(overwrite_nearest);
 }
 
 void WCSimEBonsai::SetShortDuration(float shortduration)
@@ -241,40 +245,77 @@ void WCSimEBonsai::FindMaxTimeInterval()
 	      << " hits" << std::endl;
 }
 
-void WCSimEBonsai::GetNearestNeighbours()
+void WCSimEBonsai::GetNearestNeighbours(bool overwrite_root_file)
 {
-  WCSimRootPMT pmt, otherPMT;
-  int tubeID_i, tubeID_j;
-  float x, y, z;
-  for (unsigned int i = 0; i < fNPMTs; i++) {
-    pmt = fGeom->GetPMT(i);
-    tubeID_i = pmt.GetTubeNo();
-    x = pmt.GetPosition(0);
-    y = pmt.GetPosition(1);
-    z = pmt.GetPosition(2);
-    if(fVerbose > 2)
-      cout << "Tube " << tubeID_i << " x,y,z " << x << "," << y << "," << z << endl;
+  TString fname = TString::Format("$EBONSAIDIR/data/%s_%.5f.root", fDetectorName.c_str(), fNeighbourDistance);
+  TFile f(fname);
+  TTree * t;
+  int tubeID;
+  if(!overwrite_root_file && !f.IsZombie()) {
+    if(fVerbose > 0)
+      cout << "GetNearestNeighbours(): Getting information from file: " << fname << endl;
+    //setup tree
+    f.GetObject("tNeighbours", t);
+    t->SetBranchAddress("tubeID", &tubeID);
+    std::vector<int> * neighbours = 0;
+    t->SetBranchAddress("neighbours", &neighbours);
+    //loop over tree
+    for(long ipmt = 0; ipmt < t->GetEntries(); ipmt++) {
+      t->GetEntry(ipmt);
+      fNeighbours[tubeID] = *neighbours;
+      if(fVerbose > 2)
+	cout << "\tTube " << tubeID << " has " << neighbours->size() << " neighbours" << endl;
+    }//ipmt
+  }//reading values
+  else {
+    if(fVerbose > 0)
+      cout << "GetNearestNeighbours(): calculating; starting loop over " << fNPMTs << " PMTs" << endl;
+    //setup tree
+    std::vector<int> neighbours;
+    f.Open(fname, "RECREATE");
+    t = new TTree("tNeighbours", "PMT nearest neighbours");
+    t->Branch("tubeID", &tubeID);
+    t->Branch("neighbours", &neighbours);
+    //variables for the loop
+    WCSimRootPMT pmt, otherPMT;
+    int tubeID_j;
+    float x, y, z;
+    for (unsigned int ipmt = 0; ipmt < fNPMTs; ipmt++) {
+      if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
+	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
+      pmt = fGeom->GetPMT(ipmt);
+      tubeID = pmt.GetTubeNo();
+      x = pmt.GetPosition(0);
+      y = pmt.GetPosition(1);
+      z = pmt.GetPosition(2);
+      if(fVerbose > 3)
+	cout << "Tube " << tubeID << " x,y,z " << x << "," << y << "," << z << endl;
 
-    // loop over all PMTs and get the IDs of each ones that are "close"
-    // In a 3x3 grid around PMT 'tubeID'
-    // explitly uses distance to neighboring PMTs 
-    //  (for 40% coverage with 50cm PMTs, this is 70.71 cm (100 cm diagonally))
-    vector<int> thisNeighbours;
-
-    for (unsigned int j = 0; j < fNPMTs; j++) {
-      if (j == i) continue; // don't count the current PMT itself
-      otherPMT = fGeom->GetPMT(j);
-      tubeID_j = otherPMT.GetTubeNo();
-      if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
-	       pow(y - otherPMT.GetPosition(1), 2) +
-	       pow(z - otherPMT.GetPosition(2), 2)) < fNeighbourDistance) {
-	thisNeighbours.push_back(tubeID_j);
-      }
-    }//j
-    fNeighbours[tubeID_i] = thisNeighbours;
-    if(fVerbose > 2)
-      cout << "\tTube " << tubeID_i << " has " << thisNeighbours.size() << " neighbours" << endl;
-  }//i
+      // loop over all PMTs and get the IDs of each ones that are "close"
+      // In a 3x3 grid around PMT 'tubeID'
+      // explitly uses distance to neighboring PMTs 
+      //  (for 40% coverage with 50cm PMTs, this is 70.71 cm (100 cm diagonally))
+      neighbours.clear();
+      for (unsigned int jpmt = 0; jpmt < fNPMTs; jpmt++) {
+	if(jpmt == ipmt) continue; // don't count the current PMT itself
+	otherPMT = fGeom->GetPMT(jpmt);
+	tubeID_j = otherPMT.GetTubeNo();
+	if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
+		 pow(y - otherPMT.GetPosition(1), 2) +
+		 pow(z - otherPMT.GetPosition(2), 2)) < fNeighbourDistance) {
+	  neighbours.push_back(tubeID_j);
+	}
+      }//jpmt
+      fNeighbours[tubeID] = neighbours;
+      if(fVerbose > 2)
+	cout << "\tTube " << tubeID << " has " << neighbours.size() << " neighbours" << endl;
+      //and save in the tree
+      t->Fill();
+    }//ipmt
+    t->Write();
+  }//calculating values
+  if(fVerbose > 1)
+    cout << "GetNearestNeighbours() finished" << endl;
 }
 
 void WCSimEBonsai::GetNEff()
