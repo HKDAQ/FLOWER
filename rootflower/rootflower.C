@@ -3,7 +3,7 @@ void change_prompt()
     TRint* rint = dynamic_cast<TRint*>(gApplication);
     if (!rint) return;
 
-    rint->SetPrompt("RootBONSAI: Growing your low energy physics [%d] ");
+    rint->SetPrompt("RootFLOWER: Making your low energy physics bloom [%d] ");
 }
 
 void t2k_style()
@@ -108,12 +108,12 @@ void t2k_style()
 
 }//End of definition of t2kStyle
 
-void rootebonsai()
+void rootflower()
 {   
     TString curr_dir = gSystem->pwd();
 
-    gROOT->ProcessLine(".x $EBONSAIDIR/rootebonsai/loadincs.C");    
-    gROOT->ProcessLine(".x $EBONSAIDIR/rootebonsai/loadlibs.C");    
+    gROOT->ProcessLine(".x $FLOWERDIR/rootflower/loadincs.C");    
+    gROOT->ProcessLine(".x $FLOWERDIR/rootflower/loadlibs.C");    
 
     gSystem->cd(curr_dir.Data());
 

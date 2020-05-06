@@ -1,14 +1,14 @@
 {
   TString wcsim_topdir   = gSystem->Getenv("WCSIMDIR");
   TString bonsai_topdir  = gSystem->Getenv("BONSAIDIR");
-  TString ebonsai_topdir = gSystem->Getenv("EBONSAIDIR");
+  TString flower_topdir = gSystem->Getenv("FLOWERDIR");
 
   TString mp = gROOT->GetMacroPath();
   TString ip;
 
   TString wcsim_inc   = wcsim_topdir   + "/include";
   TString bonsai_inc  = bonsai_topdir  + "/bonsai";
-  TString ebonsai_inc = ebonsai_topdir;
+  TString flower_inc = flower_topdir;
 
   const char* p = wcsim_inc.Data();
   if (p) {
@@ -30,7 +30,7 @@
   else {
     cerr << "Could not find BONSAI include path" << endl;
   }
-  const char* eb = ebonsai_inc.Data();
+  const char* eb = flower_inc.Data();
   if (eb) {
     mp += ":";
     mp += eb;
@@ -38,7 +38,7 @@
     ip += eb;
   }
   else {
-    cerr << "Could not find EBONSAI include path" << endl;
+    cerr << "Could not find FLOWER include path" << endl;
   }
 
   mp += ":/usr/local/include/";
@@ -59,7 +59,7 @@
   gROOT->ProcessLine(dip.Data());
 
   dip = ".include ";
-  dip += ebonsai_inc.Data();
+  dip += flower_inc.Data();
   gROOT->ProcessLine(dip.Data());
 
   dip = ".include /usr/local/include/";
