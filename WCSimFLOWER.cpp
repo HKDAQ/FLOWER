@@ -11,9 +11,9 @@ using std::cout;
 using std::endl;
 using std::cerr;
 
-const float WCSimEBonsai::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
+const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 
-WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
+WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
   : fLightGroupSpeed(21.58333), // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
@@ -83,45 +83,45 @@ WCSimEBonsai::WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, bool
   GetNearestNeighbours(overwrite_nearest);
 }
 
-void WCSimEBonsai::SetDarkRate(float darkrate)
+void WCSimFLOWER::SetDarkRate(float darkrate)
 {
   fDarkRate = darkrate;
   cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
   fDarkRate /= 1000000; //convert to per ns
 }
 
-void WCSimEBonsai::SetNPMTs(int npmts)
+void WCSimFLOWER::SetNPMTs(int npmts)
 {
   fNPMTs = npmts;
   cout << "Setting NPMTs to " << fNPMTs << endl;
 }
 
-void WCSimEBonsai::SetNWorkingPMTs(int nworkingpmts)
+void WCSimFLOWER::SetNWorkingPMTs(int nworkingpmts)
 {
   fNWorkingPMTs = nworkingpmts;
   cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
 }
 
-void WCSimEBonsai::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
+void WCSimFLOWER::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
 {
   fNeighbourDistance = neighbour_distance;
   cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
   GetNearestNeighbours(overwrite_nearest);
 }
 
-void WCSimEBonsai::SetShortDuration(float shortduration)
+void WCSimFLOWER::SetShortDuration(float shortduration)
 {
   fShortDuration = shortduration;
   cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
 }
 
-void WCSimEBonsai::SetLongDuration(float longduration)
+void WCSimFLOWER::SetLongDuration(float longduration)
 {
   fLongDuration = longduration;
   cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
 }
 
-void WCSimEBonsai::SetTopBottomDistance(float hi, float lo)
+void WCSimFLOWER::SetTopBottomDistance(float hi, float lo)
 {
   if(abs(lo) <= abs(hi)) {
     fTopBottomDistanceLo = abs(lo);
@@ -137,7 +137,7 @@ void WCSimEBonsai::SetTopBottomDistance(float hi, float lo)
 }
 
 
-WCSimEBonsai::kDetector_t WCSimEBonsai::DetectorEnumFromString(std::string name)
+WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
 {
   if(!name.compare("HyperK") || !name.compare("HyperK_40perCent"))
     return kHyperK40;
@@ -149,7 +149,7 @@ WCSimEBonsai::kDetector_t WCSimEBonsai::DetectorEnumFromString(std::string name)
   exit(-1);
 }
 
-float WCSimEBonsai::GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex)
+float WCSimFLOWER::GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex)
 {
   assert(times.size() == tubeIds.size());
   fNDigits = times.size();
@@ -173,7 +173,7 @@ float WCSimEBonsai::GetEnergy(std::vector<float> times, std::vector<int> tubeIds
   return fERec;
 }
 
-void WCSimEBonsai::CorrectHitTimes()
+void WCSimFLOWER::CorrectHitTimes()
 {
   // Correct all hit times for time-of-flight between vertex and PMT
   float x, y, z;
@@ -194,7 +194,7 @@ void WCSimEBonsai::CorrectHitTimes()
   std::sort(fTimesCorrectedSorted.begin(), fTimesCorrectedSorted.end());
 }
 
-void WCSimEBonsai::FindMaxTimeInterval()
+void WCSimFLOWER::FindMaxTimeInterval()
 {
   // Find the x ns interval with the highest number of hits, and its start time
   fNMaxShort = 0;
@@ -245,9 +245,9 @@ void WCSimEBonsai::FindMaxTimeInterval()
 	      << " hits" << std::endl;
 }
 
-void WCSimEBonsai::GetNearestNeighbours(bool overwrite_root_file)
+void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 {
-  TString fname = TString::Format("$EBONSAIDIR/data/%s_%.5f.root", fDetectorName.c_str(), fNeighbourDistance);
+  TString fname = TString::Format("$FLOWERDIR/data/%s_%.5f.root", fDetectorName.c_str(), fNeighbourDistance);
   TFile f(fname);
   TTree * t;
   int tubeID;
@@ -319,7 +319,7 @@ void WCSimEBonsai::GetNearestNeighbours(bool overwrite_root_file)
     cout << "GetNearestNeighbours() finished" << endl;
 }
 
-void WCSimEBonsai::GetNEff()
+void WCSimFLOWER::GetNEff()
 {
   int nearbyHits, tubeID;
   float ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency;
@@ -375,7 +375,7 @@ void WCSimEBonsai::GetNEff()
     if (theta > 89.99) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
     if (theta < 0) theta = 0; // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
     
-    photoCoverage = 1 / WCSimEBonsai::fEffCoverages[int(theta/10)];
+    photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)];
     if (fDetector == kHyperK20)
       photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
 
@@ -410,7 +410,7 @@ void WCSimEBonsai::GetNEff()
 	      << " (nEff2 for low photo-coverage is: " << fNEff2 << ")" << endl;
   }
 }
-void WCSimEBonsai::CorrectEnergy()
+void WCSimFLOWER::CorrectEnergy()
 {
   // reconstruct energy from fNEff; this is approximately linear, except at very low energies
   switch(fDetector) {

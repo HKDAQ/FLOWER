@@ -1,5 +1,5 @@
-#ifndef __WCSIMEBONSAI_H__
-#define __WCSIMEBONSAI_H__
+#ifndef __WCSIMFLOWER_H__
+#define __WCSIMFLOWER_H__
 
 #include <vector>
 #include <iostream>
@@ -16,11 +16,11 @@ using std::vector;
 // For a detailed description of the energy estimation formulas in SK-IV, see ch. 4.3 of
 // http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
 
-class WCSimEBonsai {
+class WCSimFLOWER {
 
  public:
-  WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose);
-  ~WCSimEBonsai() {};
+  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose);
+  ~WCSimFLOWER() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
 
@@ -83,4 +83,4 @@ class WCSimEBonsai {
   std::map<int, std::vector<int> > fNeighbours;
 };
 
-#endif //__WCSIMEBONSAI_H__
+#endif //__WCSIMFLOWER_H__
