@@ -1,4 +1,4 @@
-# energetic-bonsai
+# FLOWER
 Low-energy reconstruction script that works with (hk-)BONSAI
 
 It also works with other low-energy reconstruction tools - it just requires a positional vertex
@@ -9,7 +9,7 @@ Make sure the following are sourced
 
 Then
 ```bash
-export EBONSAIDIR=/path/to/energetic-bonsai
+export FLOWERDIR=/path/to/FLOWER
 make
 ```
 
@@ -17,19 +17,18 @@ make
 Make sure the following are sourced
 * WCSim (`$WCSIMDIR` set)
 * BONSAI (`$BONSAIDIR` set)
-* energetic_bonsai (`$EBONSAIDIR` set)
+* FLOWER (`$FLOWERDIR` set)
 
 Then
 ```bash
-export EBONSAIDIR=/path/to/energetic-bonsai
-export PATH=$EBONSAIDIR:$PATH
-rootebonsai -b -q energetic_bonsai.C+'("/path/to/wcsim/file.root",1,"SuperK")'
+export PATH=$FLOWERDIR/rootflower:$PATH
+rootflower -b -q flower_with_bonsai.C+'("/path/to/wcsim/file.root",1,"SuperK")'
 ```
 
 ## Running in other code
 * Construct a class member, giving it a detectorname (it sets default values and determines the exact energy correction factors) and detector geometry
 ```
-WCSimEBonsai(const char * detectorname, WCSimRootGeom * geom, int verbose);
+WCSimFlower(const char * detectorname, WCSimRootGeom * geom, int verbose);
 ```
 * Override default values of parameters with these methods
 ```
