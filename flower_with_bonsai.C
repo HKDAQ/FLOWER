@@ -21,6 +21,7 @@
 #include "WCSimRootGeom.hh"
 //BONSAI
 #include "WCSimBonsai.hh"
+//FLOWER
 #include "WCSimFLOWER.h"
 #endif
 
@@ -45,10 +46,10 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 	} else {
 		gSystem->Load("../hk-BONSAI/libWCSimBonsai.so");
 	}
-	if (getenv ("EBONSAIDIR") != NULL) {
-		gSystem->Load("${EBONSAIDIR}/libWCSimFLOWER.so");
+	if (getenv ("FLOWERDIR") != NULL) {
+		gSystem->Load("${FLOWERDIR}/libWCSimFLOWER.so");
 	} else {
-		gSystem->Load("../energetic-BONSAI/libWCSimFLOWER.so");
+		gSystem->Load("../FLOWER/libWCSimFLOWER.so");
 	}
 #endif
 
@@ -69,7 +70,7 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 	geotree->GetEntry(0);
 	bonsai->Init(geo);
 
-	WCSimEBonsai * energetic_bonsai = new WCSimEBonsai(detector, geo, overwrite_nearest, verbose);
+	WCSimFLOWER * flower = new WCSimFLOWER(detector, geo, overwrite_nearest, verbose);
 
 	TTree *tree = (TTree*)file->Get("wcsimT"); // Get a pointer to the tree from the file
 	WCSimRootEvent* event = new WCSimRootEvent(); // Create WCSimRootEvent to put stuff from the tree in
@@ -146,7 +147,7 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 			}
 
 			// Energy estimation for this trigger
-			eRec = energetic_bonsai->GetEnergy(bsT, bsCAB, &bsVertex[0]);
+			eRec = flower->GetEnergy(bsT, bsCAB, &bsVertex[0]);
 
 			recEnergy->Fill(eRec);
 
