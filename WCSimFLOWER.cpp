@@ -1,4 +1,4 @@
-#include "WCSimEBonsai.h"
+#include "WCSimFLOWER.h"
 
 #include <iostream>
 #include <cassert>

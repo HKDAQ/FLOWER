@@ -21,7 +21,7 @@
 #include "WCSimRootGeom.hh"
 //BONSAI
 #include "WCSimBonsai.hh"
-#include "WCSimEBonsai.h"
+#include "WCSimFLOWER.h"
 #endif
 
 // low energy reconstruction
@@ -46,9 +46,9 @@ int energetic_bonsai(const char *filename="../wcsim.root",
 		gSystem->Load("../hk-BONSAI/libWCSimBonsai.so");
 	}
 	if (getenv ("EBONSAIDIR") != NULL) {
-		gSystem->Load("${EBONSAIDIR}/libWCSimEBonsai.so");
+		gSystem->Load("${EBONSAIDIR}/libWCSimFLOWER.so");
 	} else {
-		gSystem->Load("../energetic-BONSAI/libWCSimEBonsai.so");
+		gSystem->Load("../energetic-BONSAI/libWCSimFLOWER.so");
 	}
 #endif
 

@@ -1,4 +1,4 @@
-# GNUmakefile for libWCSimBonsai 2015/08/12 T.Yano
+# Based on GNUmakefile for libWCSimBonsai 2015/08/12 T.Yano
 # --------------------------------------------------------------
 
 
@@ -22,33 +22,33 @@ WORKDIR := .
 TMPDIR := $(WORKDIR)/tmp
 
 
-EBONSAISO    := libWCSimEBonsai.so
+FLOWERSO    := libWCSimFLOWER.so
 
-EBONSAISRC := ./WCSimEBonsai.cpp \
-			 ./WCSimEBonsai.h
+FLOWERSRC := ./WCSimFLOWER.cpp \
+			 ./WCSimFLOWER.h
 
-EBONSAIOBJS	:= $(TMPDIR)/WCSimEBonsai.o $(TMPDIR)/WCSimEBonsaiDict.o
+FLOWEROBJS	:= $(TMPDIR)/WCSimFLOWER.o $(TMPDIR)/WCSimFLOWERDict.o
 
 
 .PHONY: directories
 
-all: directories libWCSimEBonsai.so
+all: directories libWCSimFLOWER.so
 
 directories: $(TMPDIR)
 
 $(TMPDIR) :
 	mkdir -p $(TMPDIR)
 
-libWCSimEBonsai.so : $(EBONSAIOBJS) 
+libWCSimFLOWER.so : $(FLOWEROBJS) 
 	@if [ ! -d $(TMPDIR) ] ; then mkdir $(TMPDIR) ; echo mkdir $(TMPDIR) ;fi
-	$(CXX) -shared -O $^ -o $(EBONSAISO) $(EBONSAILIBS) $(EXTRALIBS)
+	$(CXX) -shared -O $^ -o $(FLOWERSO) $(FLOWERLIBS) $(EXTRALIBS)
 
-WCSimEBonsaiDict.cpp : $(EBONSAISRC)
+WCSimFLOWERDict.cpp : $(FLOWERSRC)
 	@echo Compiling rootcint ...
-	rootcint  -f WCSimEBonsaiDict.cpp -c -I$(shell root-config --incdir) $(WCSIMINCS) \
-		WCSimEBonsai.h
+	rootcint  -f WCSimFLOWERDict.cpp -c -I$(shell root-config --incdir) $(WCSIMINCS) \
+		WCSimFLOWER.h
 
-rootcint: WCSimEBonsaiDict.cpp
+rootcint: WCSimFLOWERDict.cpp
 
 $(TMPDIR)/%.o : %.cpp
 	@echo Compiling $*.cpp ...
@@ -57,5 +57,5 @@ $(TMPDIR)/%.o : %.cpp
 
 clean :
 	@rm -f $(TMPDIR)/*.o
-	@rm -f libWCSimEBonsai.so
-	@rm -f WCSimEBonsaiDict.*
+	@rm -f libWCSimFLOWER.so
+	@rm -f WCSimFLOWERDict.*

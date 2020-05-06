@@ -1,6 +1,6 @@
 *~
-libWCSimEBonsai.so
-WCSimEBonsaiDict.*
+libWCSimFLOWER.so
+WCSimFLOWERDict.*
 tmp/
 *_C.d
 *_C.so
