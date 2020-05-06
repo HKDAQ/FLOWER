@@ -25,7 +25,7 @@
 #endif
 
 // low energy reconstruction
-int energetic_bonsai(const char *filename="../wcsim.root",
+int flower_with_bonsai(const char *filename="../wcsim.root",
 		     const int verbose=1,
 		     const bool overwrite_nearest = false,
 		     const char *detector="SuperK")
