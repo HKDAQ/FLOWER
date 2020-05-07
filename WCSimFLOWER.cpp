@@ -234,7 +234,8 @@ void WCSimFLOWER::FindMaxTimeInterval()
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
       if(fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNPMTs)
-	cerr << "WTF?! TubeId short has picked up an invalid ID" << fTubeIdsShort[j] << endl;
+	cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
+	     << "Are you using the correct input file / geometry option combination" << endl;
       j++;
     }
   }//i
