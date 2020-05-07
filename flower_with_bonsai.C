@@ -129,7 +129,7 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 				bsCAB[i] = cherenkovdigihit->GetTubeId();
 
 				if(bsCAB[i] == 0)
-				  cout << "WTF!?!? Digit has tube ID 0" << endl;
+				  cout << "Digit has tube ID 0. This shouldn't happen. WCSim TubeIds run from 1 to N. Has WCSim changed?" << endl;
 			}
 
 			// fit vertex position and direction using BONSAI
