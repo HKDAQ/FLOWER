@@ -335,6 +335,9 @@ void WCSimFLOWER::GetNEff()
 
   for (unsigned int i = 0; i < fNMaxShort; i++) {
     tubeID = fTubeIdsShort[i];
+    //WCSim tube IDs run from 1 to N
+    //But they're stored in a TClonesArray which runs from 0 to N-1
+    //Hence a -1 here
     pmt = fGeom->GetPMT(tubeID - 1);
     x = pmt.GetPosition(0);
     y = pmt.GetPosition(1);
