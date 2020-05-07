@@ -145,7 +145,7 @@ WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
     return kSuperK;
   else if (!name.compare("HyperK_20perCent"))
     return kHyperK20;
-  cerr << "FromString() Unknown detector name " << name << endl;
+  cerr << "DetectorEnumFromString() Unknown detector name: " << name << endl;
   exit(-1);
 }
 
@@ -413,7 +413,7 @@ void WCSimFLOWER::GetNEff()
 
   if(fVerbose) {
     std::cout << endl << "***************************************" << endl
-	      << "Average nEff for all hits: " << fNEff << endl
+	      << "nEff for this event: " << fNEff << endl
 	      << " (nEff2 for low photo-coverage is: " << fNEff2 << ")" << endl;
   }
 }
