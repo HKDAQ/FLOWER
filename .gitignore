@@ -1,0 +1,13 @@
+#Temp files
+*~
+
+#compilation files
+libWCSimFLOWER.so
+WCSimFLOWERDict.*
+tmp/
+*_C.d
+*_C.so
+*.pcm
+
+#run result files
+Erec.pdf
