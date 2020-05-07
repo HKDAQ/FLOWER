@@ -1,7 +1,5 @@
-# FLOWER
-Low-energy reconstruction script that works with (hk-)BONSAI
-
-It also works with other low-energy reconstruction tools - it just requires a positional vertex
+# FLOWER: soFtware for LOW-Energy Reconstruction
+An energy reconstruction script for low-energy events that works with (hk-)BONSAI and other low-energy reconstruction tools - it just requires a positional vertex.
 
 ## Compiling
 Make sure the following are sourced
