@@ -406,7 +406,7 @@ void WCSimFLOWER::GetNEff()
 
   if(fVerbose) {
     std::cout << endl << "***************************************" << endl
-	      << "Average nEff for all hits: " << fNEff << endl
+	      << "nEff for this event: " << fNEff << endl
 	      << " (nEff2 for low photo-coverage is: " << fNEff2 << ")" << endl;
   }
 }
