@@ -58,4 +58,4 @@ $(TMPDIR)/%.o : %.cpp
 clean :
 	@rm -f $(TMPDIR)/*.o
 	@rm -f libWCSimFLOWER.so
-	@rm -f WCSimFLOWERDict.*
+	@rm -f WCSimFLOWERDict*
