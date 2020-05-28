@@ -379,8 +379,8 @@ void WCSimFLOWER::GetNEff()
       pmt.GetOrientation(1)*(fVertex[1] - y) +
       pmt.GetOrientation(2)*(fVertex[2] - z);
     float theta = acos( dotProduct / fDistanceShort[i]) * 180 / 3.14159265;
-    if (theta > 89.99) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
-    if (theta < 0) theta = 0; // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
+    if (!((theta >= 0.) and (theta <= 89.99))) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
+                                                          // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
     
     photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)];
     if (fDetector == kHyperK20)
