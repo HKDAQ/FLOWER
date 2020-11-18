@@ -33,6 +33,8 @@ class WCSimFLOWER {
   void SetLongDuration(float longduration);
   void SetTopBottomDistance(float hi, float lo);
 
+  TString GetFLOWERDataDir();
+
  private:
   enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20};
 

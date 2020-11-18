@@ -20,8 +20,11 @@ Make sure the following are sourced
 Then
 ```bash
 export PATH=$FLOWERDIR/rootflower:$PATH
+export FLOWERDATADIR=/path/to/writable/directory/ #e.g. $FLOWERDIR/data/
 rootflower -b -q flower_with_bonsai.C+'("/path/to/wcsim/file.root",1,"SuperK")'
 ```
+
+Note that `$FLOWERDATADIR` is used to store information that takes a while to calculate, and that only needs to be done once per geometry (e.g. the nearest neighbours of each PMT). If `$FLOWERDATADIR` is not set, or set to a directory that doesn't exist, `$FLOWERDIR/data/` will be used instead
 
 ## Running in other code
 * Construct a class member, giving it a detectorname (it sets default values and determines the exact energy correction factors) and detector geometry

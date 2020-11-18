@@ -6,6 +6,7 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TSystem.h"
 
 using std::cout;
 using std::endl;
@@ -251,7 +252,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
 
 void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 {
-  TString fname = TString::Format("$FLOWERDIR/data/%s_%.5f.root", fDetectorName.c_str(), fNeighbourDistance);
+  TString fname = TString::Format("%s/%s_%.5f.root", GetFLOWERDataDir().Data(), fDetectorName.c_str(), fNeighbourDistance);
   TFile f(fname);
   TTree * t;
   int tubeID;
@@ -445,4 +446,14 @@ void WCSimFLOWER::CorrectEnergy()
   if(fVerbose) {
     std::cout << "Reconstructed energy = " << fERec << " MeV" << std::endl;
   }
+}
+
+TString WCSimFLOWER::GetFLOWERDataDir()
+{
+  TString dir(gSystem->Getenv("FLOWERDATADIR"));
+  if(!dir.Length() || !gSystem->OpenDirectory(dir.Data())) {
+    cout << "$FLOWERDATADIR not set, or points to directory that doesn't exist. Using $FLOWERDIR/data/" << endl;
+    dir = TString::Format("%s/data/", gSystem->Getenv("FLOWERDIR"));
+  }
+  return dir;
 }
