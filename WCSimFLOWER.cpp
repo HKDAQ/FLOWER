@@ -320,7 +320,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
   }//reading values
   else {
     if(fVerbose > 0)
-      cout << "GetNearestNeighbours(): calculating; starting loop over " << fNallPMTs << " PMTs" << endl;
+      cout << "GetNearestNeighbours(): calculating; starting loop over " << fNPMTs << " PMTs" << endl;
     //setup tree
     std::vector<int> neighbours;
     f.Open(fname, "RECREATE");
@@ -331,9 +331,10 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     WCSimRootPMT pmt, otherPMT;
     int tubeID_j;
     float x, y, z;
-    for (unsigned int ipmt = 0; ipmt < fNallPMTs; ipmt++) {
+    // Loop over 50cm PMTs to find their neighbours (don't search for neighbours of mPMTs, see https://github.com/HKDAQ/FLOWER/issues/12)
+    for (unsigned int ipmt = 0; ipmt < fNPMTs; ipmt++) {
       if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
-      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNallPMTs << endl;
+      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
       pmt = fGeom->GetPMT(ipmt);
       tubeID = pmt.GetTubeNo();
       x = pmt.GetPosition(0);
@@ -343,7 +344,6 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 	      cout << "Tube " << tubeID << " x,y,z " << x << "," << y << "," << z << endl;
 
       // loop over all PMTs and get the IDs of each ones that are closer that fNeighbourDistance
-      // TODO: for 7.5cm PMTs, only count PMTs within the same mPMT module
       neighbours.clear();
       for (unsigned int jpmt = 0; jpmt < fNallPMTs; jpmt++) {
         if(jpmt == ipmt) continue; // don't count the current PMT itself
@@ -389,26 +389,31 @@ void WCSimFLOWER::GetNEff()
     z = pmt.GetPosition(2);
 
     // Calculate occupancy to correct for multiple hits on a single PMT
-    nearbyHits = 0;
-    neighbours = fNeighbours[tubeID];
-    for(unsigned int j = 0; j < fNMaxShort; j++) {
-      if(std::find(neighbours.begin(), neighbours.end(), fTubeIdsShort[j]) != neighbours.end())
-	      nearbyHits++;
-    }//j
+    if (tubeID <= fNPMTs) {
+      nearbyHits = 0;
+      neighbours = fNeighbours[tubeID];
+      for(unsigned int j = 0; j < fNMaxShort; j++) {
+        if(std::find(neighbours.begin(), neighbours.end(), fTubeIdsShort[j]) != neighbours.end())
+          nearbyHits++;
+      }//j
 
-    // PMTs at the top/bottom edge of the barrel only have five neighbours
-    if(abs(z) > fTopBottomDistanceLo && abs(z) < fTopBottomDistanceHi)
-      // TODO: deal with PMTs at the edge of the top/bottom
-      ratio = nearbyHits / 5.0;
-    else
-      ratio = nearbyHits / 8.0;
+      // PMTs at the top/bottom edge of the barrel only have five neighbours
+      if(abs(z) > fTopBottomDistanceLo && abs(z) < fTopBottomDistanceHi)
+        // TODO: deal with PMTs at the edge of the top/bottom
+        ratio = nearbyHits / 5.0;
+      else
+        ratio = nearbyHits / 8.0;
 
-    if (ratio == 0) {
-      occupancy = 1.0;
-    } else if (ratio < 1) {
-      occupancy = log(1 / (1-ratio)) / ratio; // from Poisson statistics
+      if (ratio == 0) {
+        occupancy = 1.0;
+      } else if (ratio < 1) {
+        occupancy = log(1 / (1-ratio)) / ratio; // from Poisson statistics
+      } else {
+        occupancy = 3.0;
+      }
     } else {
-      occupancy = 3.0;
+      // Ignore occupancy correction for 3" PMTs in mPMTs, since they are highly unlikely to receive multiple hits due to their small size.
+      occupancy = 1.0;
     }
 
     // correct for delayed hits (e.g. due to scattering)
