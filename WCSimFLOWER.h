@@ -26,8 +26,11 @@ class WCSimFLOWER {
 
   //override default values with these methods
   void SetDarkRate(float darkrate);
+  void SetDarkRate2(float darkrate);
   void SetNPMTs   (int npmts);
+  void SetNPMTs2  (int npmts);
   void SetNWorkingPMTs(int nworkingpmts);
+  void SetNWorkingPMTs2(int nworkingpmts);
   void SetNeighbourDistance(float neighbourdistance, bool overwrite_nearest);
   void SetShortDuration(float shortduration);
   void SetLongDuration(float longduration);
@@ -36,7 +39,7 @@ class WCSimFLOWER {
   TString GetFLOWERDataDir();
 
  private:
-  enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20};
+  enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20, kHyperK20BnL10mPMT};
 
   kDetector_t DetectorEnumFromString(std::string name);
   void CorrectHitTimes();
@@ -52,8 +55,12 @@ class WCSimFLOWER {
   std::string fDetectorName;
   kDetector_t fDetector;
   float    fDarkRate;
+  float    fDarkRate2;
+  int      fNallPMTs;
   int       fNPMTs;
+  int       fNPMTs2;
   int       fNWorkingPMTs;
+  int       fNWorkingPMTs2;
   float    fNeighbourDistance;
   float    fTopBottomDistanceHi;
   float    fTopBottomDistanceLo;
@@ -70,7 +77,7 @@ class WCSimFLOWER {
   float  fVertex[3];
 
   float fNEff;
-  float fNEff2;
+  float fNEffMod;
   float fERec;
 
   vector<int>    fTubeIds;

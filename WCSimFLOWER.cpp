@@ -27,21 +27,36 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   switch (fDetector) {
   case kSuperK:
     fDarkRate = 4.2;
+    fDarkRate2 = 0;
     fNPMTs = 11146;
+    fNPMTs2 = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 1767;
     fTopBottomDistanceHi = 1768;
     break;
   case kHyperK40:
     fDarkRate = 8.4;
+    fDarkRate2 = 0;
     fNPMTs = 38448;
+    fNPMTs2 = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
   case kHyperK20:
     fDarkRate = 8.4;
+    fDarkRate2 = 0;
     fNPMTs = 19462;
+    fNPMTs2 = 0;
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL10mPMT:
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19462;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 19*10000;   // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -52,6 +67,10 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     break;
   }
 
+  fNallPMTs = fNPMTs;
+  if (fNPMTs2 > 0)
+    fNallPMTs = 100000 + fNPMTs2;
+  
   cout << "Using default values for detector " << fDetectorName << " " << fDetector << endl;
 
   cout << "\tUsing default dark rate " << fDarkRate << " kHz" << endl;
@@ -59,8 +78,14 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
 
   cout << "\tUsing default NPMTs " << fNPMTs << endl;
   
-  cout << "\tAssumming all PMTs are working" << endl;
+  cout << "\tUsing default dark rate for 2nd PMT type " << fDarkRate2 << " kHz" << endl;
+  fDarkRate2 /= 1000000; //convert to per ns
+
+  cout << "\tUsing default NPMTs for 2nd PMT type " << fNPMTs2 << endl;
+  
+  cout << "\tAssuming all PMTs are working" << endl;
   fNWorkingPMTs = fNPMTs;
+  fNWorkingPMTs2 = fNPMTs2;
 
   cout << "\tUsing default neighbour distance " << fNeighbourDistance << endl;
 
@@ -75,11 +100,11 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   cout << "\tA similar r-cut for caps with fewer neighbours is NOT YET implemented" << endl;
 
   //pre-assign vector memory
-  fTimes               .reserve(fNPMTs);
-  fTubeIds             .reserve(fNPMTs);
-  fDistance            .reserve(fNPMTs);
-  fTimesCorrected      .reserve(fNPMTs);
-  fTimesCorrectedSorted.reserve(fNPMTs);
+  fTimes               .reserve(fNallPMTs);
+  fTubeIds             .reserve(fNallPMTs);
+  fDistance            .reserve(fNallPMTs);
+  fTimesCorrected      .reserve(fNallPMTs);
+  fTimesCorrectedSorted.reserve(fNallPMTs);
 
   GetNearestNeighbours(overwrite_nearest);
 }
@@ -91,16 +116,35 @@ void WCSimFLOWER::SetDarkRate(float darkrate)
   fDarkRate /= 1000000; //convert to per ns
 }
 
+void WCSimFLOWER::SetDarkRate2(float darkrate)
+{
+  fDarkRate2 = darkrate;
+  cout << "Setting DarkRate to " << fDarkRate2 << " kHz" << endl;
+  fDarkRate2 /= 1000000; //convert to per ns
+}
+
 void WCSimFLOWER::SetNPMTs(int npmts)
 {
   fNPMTs = npmts;
   cout << "Setting NPMTs to " << fNPMTs << endl;
 }
 
+void WCSimFLOWER::SetNPMTs2(int npmts)
+{
+  fNPMTs2 = npmts;
+  cout << "Setting NPMTs2 to " << fNPMTs2 << endl;
+}
+
 void WCSimFLOWER::SetNWorkingPMTs(int nworkingpmts)
 {
   fNWorkingPMTs = nworkingpmts;
   cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
+}
+
+void WCSimFLOWER::SetNWorkingPMTs2(int nworkingpmts)
+{
+  fNWorkingPMTs2 = nworkingpmts;
+  cout << "Setting NWorkingPMTs2 to " << fNWorkingPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
@@ -146,6 +190,8 @@ WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
     return kSuperK;
   else if (!name.compare("HyperK_20perCent"))
     return kHyperK20;
+  else if (!name.compare("HyperK_20BnL10mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL10mPMT;
   cerr << "DetectorEnumFromString() Unknown detector name: " << name << endl;
   exit(-1);
 }
@@ -234,7 +280,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
     if(fTimesCorrected[i] >= fStartTime && fTimesCorrected[i] < (fStartTime + fShortDuration)) {
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
-      if(fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNPMTs)
+      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs || (fTubeIdsShort[j] > fNPMTs && fTubeIdsShort[j] < 100000))
 	cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
 	     << "Are you using the correct input file / geometry option combination" << endl;
       j++;
@@ -274,7 +320,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
   }//reading values
   else {
     if(fVerbose > 0)
-      cout << "GetNearestNeighbours(): calculating; starting loop over " << fNPMTs << " PMTs" << endl;
+      cout << "GetNearestNeighbours(): calculating; starting loop over " << fNallPMTs << " PMTs" << endl;
     //setup tree
     std::vector<int> neighbours;
     f.Open(fname, "RECREATE");
@@ -285,9 +331,9 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     WCSimRootPMT pmt, otherPMT;
     int tubeID_j;
     float x, y, z;
-    for (unsigned int ipmt = 0; ipmt < fNPMTs; ipmt++) {
+    for (unsigned int ipmt = 0; ipmt < fNallPMTs; ipmt++) {
       if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
-	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
+      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNallPMTs << endl;
       pmt = fGeom->GetPMT(ipmt);
       tubeID = pmt.GetTubeNo();
       x = pmt.GetPosition(0);
@@ -327,7 +373,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 void WCSimFLOWER::GetNEff()
 {
   int nearbyHits, tubeID;
-  float ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency;
+  float ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency, liveAreaFraction;
   float nEffHit, nEffHit2, x, y, z;
   vector<int> neighbours;
   WCSimRootPMT pmt;
@@ -368,10 +414,11 @@ void WCSimFLOWER::GetNEff()
     }
 
     // correct for delayed hits (e.g. due to scattering)
-    lateHits = (fNMaxLong - fNMaxShort - (fNWorkingPMTs * fDarkRate * fShortDuration)) / fNMaxShort;
+    lateHits = (fNMaxLong - fNMaxShort - (fNWorkingPMTs * fDarkRate * fShortDuration)
+                                       - (fNWorkingPMTs2 * fDarkRate2 * fShortDuration)) / fNMaxShort;
 
     // substract dark noise hits
-    darkNoise = (fNWorkingPMTs * fDarkRate * fShortDuration) / fNMaxShort;
+    darkNoise = (fNWorkingPMTs * fDarkRate * fShortDuration + fNWorkingPMTs2 * fDarkRate2 * fShortDuration) / fNMaxShort;
 
     // calculate effective coverage to correct for photoCoverage
     // this depends on angle of incidence, see Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
@@ -386,6 +433,9 @@ void WCSimFLOWER::GetNEff()
     photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)];
     if (fDetector == kHyperK20)
       photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
+    if (fDetector == kHyperK20BnL10mPMT)
+      photoCoverage *= 38448/float(19462); // ratio of number of B&L PMTs
+      photoCoverage /= 1.22; // 10k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 19462 20-inch PMTs
 
     // correct for scattering in water
     waterTransparency = exp(fDistanceShort[i] / fLambdaEff);
@@ -408,9 +458,10 @@ void WCSimFLOWER::GetNEff()
   } // i //end of loop over hits in 50 ns interval
 
 
- // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
-  fNEff  *= fNPMTs / float(fNWorkingPMTs);
-  fNEff2 *= fNPMTs / float(fNWorkingPMTs);
+  // correct for dead PMTs
+  liveAreaFraction = (fNPMTs + 0.4275 * fNPMTs2) / (fNWorkingPMTs + 0.4275 * fNWorkingPMTs2); // photosensitive area of 19x3" PMTs is 0.4275 times that of 1x20" PMT
+  fNEff *= liveAreaFraction;
+  fNEff2 *= liveAreaFraction;
 
   if(fVerbose) {
     std::cout << endl << "***************************************" << endl
@@ -441,6 +492,9 @@ void WCSimFLOWER::CorrectEnergy()
     else
       // use fNEff2 (with occupancy to power of 1.4)
       fERec = 0.000001148*pow(fNEff2, 2) + 0.02032*fNEff2 + 1.94;
+    break;
+  case kHyperK20BnL10mPMT:
+    fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
     break;
   }
   if(fVerbose) {
