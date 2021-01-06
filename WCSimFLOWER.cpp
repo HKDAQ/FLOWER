@@ -13,6 +13,7 @@ using std::endl;
 using std::cerr;
 
 const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
+const int FIRST_PMT2 = 100000;
 
 WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
   : fLightGroupSpeed(21.58333), // speed of light in water (in cm/ns), value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
@@ -69,8 +70,8 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
 
   fNallPMTs = fNPMTs;
   if (fNPMTs2 > 0)
-    fNallPMTs = 100000 + fNPMTs2;
-  
+    fNallPMTs = FIRST_PMT2 + fNPMTs2;
+
   cout << "Using default values for detector " << fDetectorName << " " << fDetector << endl;
 
   cout << "\tUsing default dark rate " << fDarkRate << " kHz" << endl;
@@ -280,7 +281,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
     if(fTimesCorrected[i] >= fStartTime && fTimesCorrected[i] < (fStartTime + fShortDuration)) {
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
-      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs || (fTubeIdsShort[j] > fNPMTs && fTubeIdsShort[j] < 100000))
+      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs || (fTubeIdsShort[j] > fNPMTs && fTubeIdsShort[j] < FIRST_PMT2))
         cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
              << "Are you using the correct input file / geometry option combination" << endl;
       j++;
@@ -347,7 +348,11 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
       neighbours.clear();
       for (unsigned int jpmt = 0; jpmt < fNallPMTs; jpmt++) {
         if(jpmt == ipmt) continue; // don't count the current PMT itself
-        otherPMT = fGeom->GetPMT(jpmt);
+        if (jpmt < FIRST_PMT2)
+          otherPMT = fGeom->GetPMT(jpmt);
+        else
+          otherPMT = fGeom->GetPMT(jpmt - FIRST_PMT2, true);
+
         tubeID_j = otherPMT.GetTubeNo();
         if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
                  pow(y - otherPMT.GetPosition(1), 2) +
