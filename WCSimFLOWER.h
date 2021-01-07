@@ -35,6 +35,9 @@ class WCSimFLOWER {
   void SetShortDuration(float shortduration);
   void SetLongDuration(float longduration);
   void SetTopBottomDistance(float hi, float lo);
+  
+  inline void SetQuietMode(bool bQuiet) { fQuiet = bQuiet; }
+  inline void OverwriteNearestNeighbour() { GetNearestNeighbours(true); }
 
   TString GetFLOWERDataDir();
 
@@ -65,6 +68,7 @@ class WCSimFLOWER {
   float    fTopBottomDistanceHi;
   float    fTopBottomDistanceLo;
   int       fVerbose;
+  bool       fQuiet;
 
   WCSimRootGeom * fGeom;
 

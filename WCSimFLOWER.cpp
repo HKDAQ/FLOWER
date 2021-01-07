@@ -23,7 +23,8 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fVerbose(verbose),
     fGeom(geom),
     fLongDuration(100),
-    fShortDuration(50)
+    fShortDuration(50),
+    fQuiet(false)
 {
   switch (fDetector) {
   case kSuperK:
@@ -114,58 +115,58 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
 void WCSimFLOWER::SetDarkRate(float darkrate)
 {
   fDarkRate = darkrate;
-  cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
+  if ( !fQuiet ) cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
   fDarkRate /= 1000000; //convert to per ns
 }
 
 void WCSimFLOWER::SetDarkRate2(float darkrate)
 {
   fDarkRate2 = darkrate;
-  cout << "Setting DarkRate to " << fDarkRate2 << " kHz" << endl;
+  if ( !fQuiet ) cout << "Setting DarkRate to " << fDarkRate2 << " kHz" << endl;
   fDarkRate2 /= 1000000; //convert to per ns
 }
 
 void WCSimFLOWER::SetNPMTs(int npmts)
 {
   fNPMTs = npmts;
-  cout << "Setting NPMTs to " << fNPMTs << endl;
+  if ( !fQuiet ) cout << "Setting NPMTs to " << fNPMTs << endl;
 }
 
 void WCSimFLOWER::SetNPMTs2(int npmts)
 {
   fNPMTs2 = npmts;
-  cout << "Setting NPMTs2 to " << fNPMTs2 << endl;
+  if ( !fQuiet ) cout << "Setting NPMTs2 to " << fNPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNWorkingPMTs(int nworkingpmts)
 {
   fNWorkingPMTs = nworkingpmts;
-  cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
+  if ( !fQuiet ) cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
 }
 
 void WCSimFLOWER::SetNWorkingPMTs2(int nworkingpmts)
 {
   fNWorkingPMTs2 = nworkingpmts;
-  cout << "Setting NWorkingPMTs2 to " << fNWorkingPMTs2 << endl;
+  if ( !fQuiet ) cout << "Setting NWorkingPMTs2 to " << fNWorkingPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
 {
   fNeighbourDistance = neighbour_distance;
-  cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
+  if ( !fQuiet ) cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
   GetNearestNeighbours(overwrite_nearest);
 }
 
 void WCSimFLOWER::SetShortDuration(float shortduration)
 {
   fShortDuration = shortduration;
-  cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
+  if ( !fQuiet ) cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
 }
 
 void WCSimFLOWER::SetLongDuration(float longduration)
 {
   fLongDuration = longduration;
-  cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
+  if ( !fQuiet ) cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
 }
 
 void WCSimFLOWER::SetTopBottomDistance(float hi, float lo)
