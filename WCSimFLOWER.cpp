@@ -505,7 +505,7 @@ void WCSimFLOWER::CorrectEnergy()
     fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
     break;
   }
-  if(fVerbose) {
+  if(fVerbose > 0) {
     std::cout << "Reconstructed energy = " << fERec << " MeV" << std::endl;
   }
 }

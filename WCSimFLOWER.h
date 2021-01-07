@@ -35,8 +35,6 @@ class WCSimFLOWER {
   void SetShortDuration(float shortduration);
   void SetLongDuration(float longduration);
   void SetTopBottomDistance(float hi, float lo);
-  
-  inline void OverwriteNearestNeighbour() { GetNearestNeighbours(true); }
 
   TString GetFLOWERDataDir();
 
