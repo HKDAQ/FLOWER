@@ -288,7 +288,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
     }
   }//i
 
-  if(fVerbose)
+  if(fVerbose > 0)
     std::cout << "Maximum of " << fNMaxShort << " hits in " 
 	      << fShortDuration << " ns window starting at "
 	      << fStartTime << " ns" << std::endl
