@@ -471,7 +471,7 @@ void WCSimFLOWER::GetNEff()
   fNEff *= liveAreaFraction;
   fNEffMod *= liveAreaFraction;
 
-  if(fVerbose) {
+  if(fVerbose > 0) {
     std::cout << endl << "***************************************" << endl
 	      << "nEff for this event: " << fNEff << endl
 	      << " (nEffMod for low photo-coverage is: " << fNEffMod << ")" << endl;
