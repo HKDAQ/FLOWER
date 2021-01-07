@@ -36,7 +36,6 @@ class WCSimFLOWER {
   void SetLongDuration(float longduration);
   void SetTopBottomDistance(float hi, float lo);
   
-  inline void SetQuietMode(bool bQuiet) { fQuiet = bQuiet; }
   inline void OverwriteNearestNeighbour() { GetNearestNeighbours(true); }
 
   TString GetFLOWERDataDir();
