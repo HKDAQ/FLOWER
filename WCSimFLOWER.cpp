@@ -56,8 +56,8 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   case kHyperK20BnL10mPMT:
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 19462;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 19*10000;   // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 182704; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
