@@ -440,11 +440,11 @@ void WCSimFLOWER::GetNEff()
     
     photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)]; // 1 over photocoverage, assuming SuperK or HyperK_40perCent
     if (fDetector == kHyperK20)
-      photoCoverage *= 38448/float(19462); // ratio of number of PMTs
-    if (fDetector == kHyperK20BnL10mPMT)
-      photoCoverage *= 38448/float(19462); // ratio of number of B&L PMTs
+      photoCoverage *= 38448 / float(fNPMTs); // ratio of number of PMTs
+    if (fDetector == kHyperK20BnL10mPMT) {
+      photoCoverage *= 39238 / float(fNPMTs); // ratio of number of B&L PMTs
       photoCoverage /= 1.22; // 10k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 19462 20-inch PMTs
-
+    }
     // correct for scattering in water
     waterTransparency = exp(fDistanceShort[i] / fLambdaEff);
 
