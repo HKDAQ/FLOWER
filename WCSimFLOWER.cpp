@@ -114,58 +114,58 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
 void WCSimFLOWER::SetDarkRate(float darkrate)
 {
   fDarkRate = darkrate;
-  cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
+  if (fVerbose >= 0) cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
   fDarkRate /= 1000000; //convert to per ns
 }
 
 void WCSimFLOWER::SetDarkRate2(float darkrate)
 {
   fDarkRate2 = darkrate;
-  cout << "Setting DarkRate to " << fDarkRate2 << " kHz" << endl;
+  if (fVerbose >= 0) cout << "Setting DarkRate to " << fDarkRate2 << " kHz" << endl;
   fDarkRate2 /= 1000000; //convert to per ns
 }
 
 void WCSimFLOWER::SetNPMTs(int npmts)
 {
   fNPMTs = npmts;
-  cout << "Setting NPMTs to " << fNPMTs << endl;
+  if (fVerbose >= 0) cout << "Setting NPMTs to " << fNPMTs << endl;
 }
 
 void WCSimFLOWER::SetNPMTs2(int npmts)
 {
   fNPMTs2 = npmts;
-  cout << "Setting NPMTs2 to " << fNPMTs2 << endl;
+  if (fVerbose >= 0) cout << "Setting NPMTs2 to " << fNPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNWorkingPMTs(int nworkingpmts)
 {
   fNWorkingPMTs = nworkingpmts;
-  cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
+  if (fVerbose >= 0) cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
 }
 
 void WCSimFLOWER::SetNWorkingPMTs2(int nworkingpmts)
 {
   fNWorkingPMTs2 = nworkingpmts;
-  cout << "Setting NWorkingPMTs2 to " << fNWorkingPMTs2 << endl;
+  if (fVerbose >= 0) cout << "Setting NWorkingPMTs2 to " << fNWorkingPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
 {
   fNeighbourDistance = neighbour_distance;
-  cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
+  if (fVerbose >= 0) cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
   GetNearestNeighbours(overwrite_nearest);
 }
 
 void WCSimFLOWER::SetShortDuration(float shortduration)
 {
   fShortDuration = shortduration;
-  cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
+  if (fVerbose >= 0) cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
 }
 
 void WCSimFLOWER::SetLongDuration(float longduration)
 {
   fLongDuration = longduration;
-  cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
+  if (fVerbose >= 0) cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
 }
 
 void WCSimFLOWER::SetTopBottomDistance(float hi, float lo)
@@ -288,7 +288,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
     }
   }//i
 
-  if(fVerbose)
+  if(fVerbose > 0)
     std::cout << "Maximum of " << fNMaxShort << " hits in " 
 	      << fShortDuration << " ns window starting at "
 	      << fStartTime << " ns" << std::endl
@@ -471,7 +471,7 @@ void WCSimFLOWER::GetNEff()
   fNEff *= liveAreaFraction;
   fNEffMod *= liveAreaFraction;
 
-  if(fVerbose) {
+  if(fVerbose > 0) {
     std::cout << endl << "***************************************" << endl
 	      << "nEff for this event: " << fNEff << endl
 	      << " (nEffMod for low photo-coverage is: " << fNEffMod << ")" << endl;
@@ -505,7 +505,7 @@ void WCSimFLOWER::CorrectEnergy()
     fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
     break;
   }
-  if(fVerbose) {
+  if(fVerbose > 0) {
     std::cout << "Reconstructed energy = " << fERec << " MeV" << std::endl;
   }
 }
