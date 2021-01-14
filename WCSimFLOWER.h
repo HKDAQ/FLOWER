@@ -65,7 +65,6 @@ class WCSimFLOWER {
   float    fTopBottomDistanceHi;
   float    fTopBottomDistanceLo;
   int       fVerbose;
-  bool       fQuiet;
 
   WCSimRootGeom * fGeom;
 
