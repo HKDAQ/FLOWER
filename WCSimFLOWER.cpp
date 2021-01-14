@@ -385,7 +385,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
       x = pmt.GetPosition(0);
       y = pmt.GetPosition(1);
       z = pmt.GetPosition(2);
-      if(fVerbose > 3 || ipmt <2)
+      if(fVerbose > 3)
 	      cout << "Tube " << tubeID << " x,y,z " << x << "," << y << "," << z << endl;
 
       // loop over all PMTs and get the IDs of each ones that are closer that fNeighbourDistance
