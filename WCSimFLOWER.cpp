@@ -67,7 +67,7 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 38952;   // total number of 50cm Box&Line PMTs
     fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
-    fNeighbourDistance = 145;
+    fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
@@ -385,7 +385,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
       x = pmt.GetPosition(0);
       y = pmt.GetPosition(1);
       z = pmt.GetPosition(2);
-      if(fVerbose > 3)
+      if(fVerbose > 3 || ipmt <2)
 	      cout << "Tube " << tubeID << " x,y,z " << x << "," << y << "," << z << endl;
 
       // loop over all PMTs and get the IDs of each ones that are closer that fNeighbourDistance
