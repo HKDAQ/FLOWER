@@ -39,7 +39,7 @@ class WCSimFLOWER {
   TString GetFLOWERDataDir();
 
  private:
-  enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20, kHyperK20BnL10mPMT};
+  enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20, kHyperK20BnL0mPMT, kHyperK40BnL0mPMT, kHyperK20BnL3mPMT, kHyperK20BnL5mPMT, kHyperK20BnL10mPMT};
 
   kDetector_t DetectorEnumFromString(std::string name);
   void CorrectHitTimes();

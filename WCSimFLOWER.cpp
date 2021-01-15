@@ -53,6 +53,42 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
+  case kHyperK20BnL0mPMT: // WCSim Hybrid 20% case
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19418;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK40BnL0mPMT:
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 38952;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNeighbourDistance = 102;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL3mPMT:
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 20055;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 54131; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL5mPMT:
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 18952;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 89604; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
   case kHyperK20BnL10mPMT:
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
@@ -192,6 +228,14 @@ WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
     return kSuperK;
   else if (!name.compare("HyperK_20perCent"))
     return kHyperK20;
+  else if (!name.compare("HyperK_20BnL0mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL0mPMT;
+  else if (!name.compare("HyperK_40BnL0mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK40BnL0mPMT;
+  else if (!name.compare("HyperK_20BnL3mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL3mPMT;
+  else if (!name.compare("HyperK_20BnL5mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL5mPMT;
   else if (!name.compare("HyperK_20BnL10mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
     return kHyperK20BnL10mPMT;
   cerr << "DetectorEnumFromString() Unknown detector name: " << name << endl;
@@ -441,9 +485,20 @@ void WCSimFLOWER::GetNEff()
     photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)]; // 1 over photocoverage, assuming SuperK or HyperK_40perCent
     if (fDetector == kHyperK20)
       photoCoverage *= 38448 / float(fNPMTs); // ratio of number of PMTs
+    if (fDetector == kHyperK20BnL0mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+    }
+    if (fDetector == kHyperK20BnL3mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+      photoCoverage /= 1.06; //  3k mPMT modules (19 PMTs, 3" diameter) have  6% the area of 20055 20-inch PMTs
+    }
+    if (fDetector == kHyperK20BnL5mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+      photoCoverage /= 1.11; //  5k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 18952 20-inch PMTs
+    }
     if (fDetector == kHyperK20BnL10mPMT) {
-      photoCoverage *= 39238 / float(fNPMTs); // ratio of number of B&L PMTs
-      photoCoverage /= 1.22; // 10k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 19462 20-inch PMTs
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+      photoCoverage /= 1.22; // 10k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 19208 20-inch PMTs
     }
     // correct for scattering in water
     waterTransparency = exp(fDistanceShort[i] / fLambdaEff);
