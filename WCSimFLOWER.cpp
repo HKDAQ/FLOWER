@@ -15,7 +15,8 @@ using std::cerr;
 const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 const int FIRST_PMT2 = 100000;
 
-WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
+
+WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose, std::vector<bool> masked_pmts)
   : fLightGroupSpeed(21.58333), // speed of light in water (in cm/ns), value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
@@ -23,14 +24,17 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fVerbose(verbose),
     fGeom(geom),
     fLongDuration(100),
-    fShortDuration(50)
+    fShortDuration(50),
+    fMaskedPMTs(masked_pmts)
 {
   switch (fDetector) {
   case kSuperK:
     fDarkRate = 4.2;
     fDarkRate2 = 0;
     fNPMTs = 11146;
+    fNPMTs_nomask = 11146;
     fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 1767;
     fTopBottomDistanceHi = 1768;
@@ -39,7 +43,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;
     fDarkRate2 = 0;
     fNPMTs = 38448;
+    fNPMTs_nomask = 38448;
     fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -48,7 +54,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;
     fDarkRate2 = 0;
     fNPMTs = 19462;
+    fNPMTs_nomask = 19462;
     fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -57,7 +65,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
     fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 0; // true number of 7.5 cm PMTs in the files (for PMT Id check). Actually 182704 here, but FLOWER should not see any hit from these PMTs
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -66,7 +76,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 38952;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 38952; // true number of 50cm cm PMTs in the files (for PMT Id check).
     fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 0; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -75,7 +87,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
     fNPMTs2 = 54853; // total number of 7.5cm PMTs (3k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -84,7 +98,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
     fNPMTs2 = 91352; // total number of 7.5cm PMTs (5k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -93,7 +109,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
     fNPMTs2 = 182704; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -105,8 +123,20 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   }
 
   fNallPMTs = fNPMTs;
+  fNallPMTs_nomask = fNPMTs_nomask;
+  
   if (fNPMTs2 > 0)
     fNallPMTs = FIRST_PMT2 + fNPMTs2;
+  if (fNPMTs2_nomask > 0)
+    fNallPMTs_nomask = FIRST_PMT2 + fNPMTs2_nomask;
+    
+  if ( fMaskedPMTs.size() == 0 ) {
+    fMaskedPMTs.resize(fNallPMTs_nomask,false);
+  }
+  else if ( fMaskedPMTs.size() < fNallPMTs_nomask ) {
+    cerr << "Masked PMT list is invalid " << fMaskedPMTs.size() << " < " << fNallPMTs_nomask << endl;
+    exit(-1);
+  }
 
   cout << "Using default values for detector " << fDetectorName << " " << fDetector << endl;
 
@@ -142,6 +172,7 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   fDistance            .reserve(fNallPMTs);
   fTimesCorrected      .reserve(fNallPMTs);
   fTimesCorrectedSorted.reserve(fNallPMTs);
+  
 
   GetNearestNeighbours(overwrite_nearest);
 }
@@ -325,7 +356,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
     if(fTimesCorrected[i] >= fStartTime && fTimesCorrected[i] < (fStartTime + fShortDuration)) {
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
-      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs || (fTubeIdsShort[j] > fNPMTs && fTubeIdsShort[j] < FIRST_PMT2))
+      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs_nomask || (fTubeIdsShort[j] > fNPMTs_nomask && fTubeIdsShort[j] < FIRST_PMT2))
         cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
              << "Are you using the correct input file / geometry option combination" << endl;
       j++;
@@ -377,7 +408,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     int tubeID_j;
     float x, y, z;
     // Loop over 50cm PMTs to find their neighbours (don't search for neighbours of mPMTs, see https://github.com/HKDAQ/FLOWER/issues/12)
-    for (unsigned int ipmt = 0; ipmt < fNPMTs; ipmt++) {
+    for (unsigned int ipmt = 0; ipmt < fNPMTs_nomask; ipmt++) {        
       if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
       	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
       pmt = fGeom->GetPMT(ipmt);
@@ -390,8 +421,9 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 
       // loop over all PMTs and get the IDs of each ones that are closer that fNeighbourDistance
       neighbours.clear();
-      for (unsigned int jpmt = 0; jpmt < fNallPMTs; jpmt++) {
+      for (unsigned int jpmt = 0; jpmt < fNallPMTs_nomask; jpmt++) {
         if(jpmt == ipmt) continue; // don't count the current PMT itself
+        if(fMaskedPMTs[jpmt] || fMaskedPMTs[ipmt]) continue; // don't count masked PMTs
         if (jpmt < FIRST_PMT2)
           otherPMT = fGeom->GetPMT(jpmt);
         else
