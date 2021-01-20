@@ -409,8 +409,8 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     float x, y, z;
     // Loop over 50cm PMTs to find their neighbours (don't search for neighbours of mPMTs, see https://github.com/HKDAQ/FLOWER/issues/12)
     for (unsigned int ipmt = 0; ipmt < fNPMTs_nomask; ipmt++) {        
-      if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
-      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
+      if(fVerbose > 0 && ipmt % (fNPMTs_nomask / 10) == 0)
+      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs_nomask << endl;
       pmt = fGeom->GetPMT(ipmt);
       tubeID = pmt.GetTubeNo();
       x = pmt.GetPosition(0);
@@ -470,7 +470,7 @@ void WCSimFLOWER::GetNEff()
     z = pmt.GetPosition(2);
 
     // Calculate occupancy to correct for multiple hits on a single PMT
-    if (tubeID <= fNPMTs) {
+    if (tubeID <= fNPMTs_nomask) {
       nearbyHits = 0;
       neighbours = fNeighbours[tubeID];
       for(unsigned int j = 0; j < fNMaxShort; j++) {
