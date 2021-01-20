@@ -53,43 +53,43 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20BnL0mPMT: // WCSim Hybrid 20% case
+  case kHyperK20BnL0mPMT: // WCSim Hybrid 20% case, result from 20k BL + 10k mPMTs with mask over 100% of 10k mPMT modules
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 19418;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK40BnL0mPMT:
+  case kHyperK40BnL0mPMT: // WCSim Hybrid 40% case
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 38952;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20BnL3mPMT:
+  case kHyperK20BnL3mPMT: // WCSim Hybrid 20% + 3k mPMT case, result from 20k BL + 10k mPMTs with mask over 70% of 10k mPMT modules
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 20055;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 54131; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 54853; // total number of 7.5cm PMTs (3k mPMT modules, 19 PMTs each)
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20BnL5mPMT:
+  case kHyperK20BnL5mPMT: // WCSim Hybrid 20% + 5k mPMT case, result from 20k BL + 10k mPMTs with mask over 50% of 10k mPMT modules
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 18952;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 89604; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs2 = 91352; // total number of 7.5cm PMTs (5k mPMT modules, 19 PMTs each)
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20BnL10mPMT:
+  case kHyperK20BnL10mPMT:  // WCSim Hybrid 20% + 10k mPMT case, result from 20k BL + 10k mPMTs with mask over 0% of 10k mPMT modules
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
@@ -494,7 +494,7 @@ void WCSimFLOWER::GetNEff()
     }
     if (fDetector == kHyperK20BnL5mPMT) {
       photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
-      photoCoverage /= 1.11; //  5k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 18952 20-inch PMTs
+      photoCoverage /= 1.11; //  5k mPMT modules (19 PMTs, 3" diameter) have 11% the area of 18952 20-inch PMTs
     }
     if (fDetector == kHyperK20BnL10mPMT) {
       photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
