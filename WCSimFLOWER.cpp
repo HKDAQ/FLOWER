@@ -410,7 +410,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     float x, y, z;
     // Loop over 50cm PMTs to find their neighbours (don't search for neighbours of mPMTs, see https://github.com/HKDAQ/FLOWER/issues/12)
     for (unsigned int ipmt = 0; ipmt < fNPMTs_nomask; ipmt++) {        
-      if(fVerbose > 0 && ipmt % (fNPMTs_nomask / 10) == 0)
+      if(fVerbose && ipmt % (fNPMTs_nomask / 10) == 0)
       	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs_nomask << endl;
       pmt = fGeom->GetPMT(ipmt);
       tubeID = pmt.GetTubeNo();
