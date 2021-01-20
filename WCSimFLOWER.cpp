@@ -356,7 +356,8 @@ void WCSimFLOWER::FindMaxTimeInterval()
     if(fTimesCorrected[i] >= fStartTime && fTimesCorrected[i] < (fStartTime + fShortDuration)) {
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
-      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs_nomask || (fTubeIdsShort[j] > fNPMTs_nomask && fTubeIdsShort[j] < FIRST_PMT2))
+      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs_nomask || (fTubeIdsShort[j] > fNPMTs_nomask && fTubeIdsShort[j] < FIRST_PMT2) 
+         || fMaskedPMTs[fTubeIdsShort[j]] )
         cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
              << "Are you using the correct input file / geometry option combination" << endl;
       j++;
@@ -423,17 +424,17 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
       neighbours.clear();
       for (unsigned int jpmt = 0; jpmt < fNallPMTs_nomask; jpmt++) {
         if(jpmt == ipmt) continue; // don't count the current PMT itself
-        if(fMaskedPMTs[jpmt] || fMaskedPMTs[ipmt]) continue; // don't count masked PMTs
-        if (jpmt < FIRST_PMT2)
+        if(fMaskedPMTs[tubeID]) continue; // don't count masked PMTs
+        if (jpmt < FIRST_PMT2) {
+          if (jpmt >= fNPMTs_nomask ) continue; // this PMT doesn't exist
           otherPMT = fGeom->GetPMT(jpmt);
-        else
+          tubeID_j = otherPMT.GetTubeNo();
+          if(fMaskedPMTs[tubeID_j]) continue; // don't count masked PMTs
+        }
+        else {
           otherPMT = fGeom->GetPMT(jpmt - FIRST_PMT2, true);
-
-        tubeID_j = otherPMT.GetTubeNo();
-        if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
-                 pow(y - otherPMT.GetPosition(1), 2) +
-                 pow(z - otherPMT.GetPosition(2), 2)) < fNeighbourDistance) {
-          neighbours.push_back(tubeID_j);
+          tubeID_j = otherPMT.GetTubeNo();
+          if(fMaskedPMTs[tubeID_j+FIRST_PMT2]) continue; // don't count masked PMTs
         }
       }//jpmt
       fNeighbours[tubeID] = neighbours;
