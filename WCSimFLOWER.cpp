@@ -15,7 +15,8 @@ using std::cerr;
 const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 const int FIRST_PMT2 = 100000;
 
-WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
+
+WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose, std::vector<bool> masked_pmts)
   : fLightGroupSpeed(21.58333), // speed of light in water (in cm/ns), value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
@@ -23,14 +24,17 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fVerbose(verbose),
     fGeom(geom),
     fLongDuration(100),
-    fShortDuration(50)
+    fShortDuration(50),
+    fMaskedPMTs(masked_pmts)
 {
   switch (fDetector) {
   case kSuperK:
     fDarkRate = 4.2;
     fDarkRate2 = 0;
     fNPMTs = 11146;
+    fNPMTs_nomask = 11146;
     fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 1767;
     fTopBottomDistanceHi = 1768;
@@ -39,7 +43,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;
     fDarkRate2 = 0;
     fNPMTs = 38448;
+    fNPMTs_nomask = 38448;
     fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -48,52 +54,64 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fDarkRate = 8.4;
     fDarkRate2 = 0;
     fNPMTs = 19462;
+    fNPMTs_nomask = 19462;
     fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20BnL0mPMT: // WCSim Hybrid 20% case
+  case kHyperK20BnL0mPMT: // WCSim Hybrid 20% case, result from 20k BL + 10k mPMTs with mask over 100% of 10k mPMT modules
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 19418;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 0; // true number of 7.5 cm PMTs in the files (for PMT Id check). Actually 182704 here, but FLOWER should not see any hit from these PMTs
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK40BnL0mPMT:
+  case kHyperK40BnL0mPMT: // WCSim Hybrid 40% case
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 38952;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 0; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs_nomask = 38952; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 0; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20BnL3mPMT:
-    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
-    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 20055;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 54131; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
-    fNeighbourDistance = 145;
-    fTopBottomDistanceLo = 2670;
-    fTopBottomDistanceHi = 2690;
-    break;
-  case kHyperK20BnL5mPMT:
-    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
-    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
-    fNPMTs = 18952;   // total number of 50cm Box&Line PMTs
-    fNPMTs2 = 89604; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
-    fNeighbourDistance = 145;
-    fTopBottomDistanceLo = 2670;
-    fTopBottomDistanceHi = 2690;
-    break;
-  case kHyperK20BnL10mPMT:
+  case kHyperK20BnL3mPMT: // WCSim Hybrid 20% + 3k mPMT case, result from 20k BL + 10k mPMTs with mask over 70% of 10k mPMT modules
     fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
     fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
     fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 54853; // total number of 7.5cm PMTs (3k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL5mPMT: // WCSim Hybrid 20% + 5k mPMT case, result from 20k BL + 10k mPMTs with mask over 50% of 10k mPMT modules
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 91352; // total number of 7.5cm PMTs (5k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL10mPMT:  // WCSim Hybrid 20% + 10k mPMT case, result from 20k BL + 10k mPMTs with mask over 0% of 10k mPMT modules
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
     fNPMTs2 = 182704; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -105,8 +123,20 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   }
 
   fNallPMTs = fNPMTs;
+  fNallPMTs_nomask = fNPMTs_nomask;
+  
   if (fNPMTs2 > 0)
     fNallPMTs = FIRST_PMT2 + fNPMTs2;
+  if (fNPMTs2_nomask > 0)
+    fNallPMTs_nomask = FIRST_PMT2 + fNPMTs2_nomask;
+    
+  if ( fMaskedPMTs.size() == 0 ) {
+    fMaskedPMTs.resize(fNallPMTs_nomask,false);
+  }
+  else if ( fMaskedPMTs.size() < fNallPMTs_nomask ) {
+    cerr << "Masked PMT list is invalid " << fMaskedPMTs.size() << " < " << fNallPMTs_nomask << endl;
+    exit(-1);
+  }
 
   cout << "Using default values for detector " << fDetectorName << " " << fDetector << endl;
 
@@ -142,6 +172,7 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   fDistance            .reserve(fNallPMTs);
   fTimesCorrected      .reserve(fNallPMTs);
   fTimesCorrectedSorted.reserve(fNallPMTs);
+  
 
   GetNearestNeighbours(overwrite_nearest);
 }
@@ -325,7 +356,8 @@ void WCSimFLOWER::FindMaxTimeInterval()
     if(fTimesCorrected[i] >= fStartTime && fTimesCorrected[i] < (fStartTime + fShortDuration)) {
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
-      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs || (fTubeIdsShort[j] > fNPMTs && fTubeIdsShort[j] < FIRST_PMT2))
+      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs_nomask || (fTubeIdsShort[j] > fNPMTs_nomask && fTubeIdsShort[j] < FIRST_PMT2)
+         || fMaskedPMTs[fTubeIdsShort[j]] )
         cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
              << "Are you using the correct input file / geometry option combination" << endl;
       j++;
@@ -377,9 +409,9 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     int tubeID_j;
     float x, y, z;
     // Loop over 50cm PMTs to find their neighbours (don't search for neighbours of mPMTs, see https://github.com/HKDAQ/FLOWER/issues/12)
-    for (unsigned int ipmt = 0; ipmt < fNPMTs; ipmt++) {
-      if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
-      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
+    for (unsigned int ipmt = 0; ipmt < fNPMTs_nomask; ipmt++) {        
+      if(fVerbose && ipmt % (fNPMTs_nomask / 10) == 0)
+      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs_nomask << endl;
       pmt = fGeom->GetPMT(ipmt);
       tubeID = pmt.GetTubeNo();
       x = pmt.GetPosition(0);
@@ -390,14 +422,21 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 
       // loop over all PMTs and get the IDs of each ones that are closer that fNeighbourDistance
       neighbours.clear();
-      for (unsigned int jpmt = 0; jpmt < fNallPMTs; jpmt++) {
+      for (unsigned int jpmt = 0; jpmt < fNallPMTs_nomask; jpmt++) {
         if(jpmt == ipmt) continue; // don't count the current PMT itself
-        if (jpmt < FIRST_PMT2)
+        if(fMaskedPMTs[tubeID]) continue; // don't count masked PMTs
+        if (jpmt < FIRST_PMT2) {
+          if (jpmt >= fNPMTs_nomask ) continue; // this PMT doesn't exist
           otherPMT = fGeom->GetPMT(jpmt);
-        else
+          tubeID_j = otherPMT.GetTubeNo();	      
+          if(fMaskedPMTs[tubeID_j]) continue; // don't count masked PMTs
+        }
+        else {
           otherPMT = fGeom->GetPMT(jpmt - FIRST_PMT2, true);
+          tubeID_j = otherPMT.GetTubeNo();
+          if(fMaskedPMTs[tubeID_j+FIRST_PMT2]) continue; // don't count masked PMTs
+        }
 
-        tubeID_j = otherPMT.GetTubeNo();
         if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
                  pow(y - otherPMT.GetPosition(1), 2) +
                  pow(z - otherPMT.GetPosition(2), 2)) < fNeighbourDistance) {
@@ -438,7 +477,7 @@ void WCSimFLOWER::GetNEff()
     z = pmt.GetPosition(2);
 
     // Calculate occupancy to correct for multiple hits on a single PMT
-    if (tubeID <= fNPMTs) {
+    if (tubeID <= fNPMTs_nomask) {
       nearbyHits = 0;
       neighbours = fNeighbours[tubeID];
       for(unsigned int j = 0; j < fNMaxShort; j++) {
@@ -494,7 +533,7 @@ void WCSimFLOWER::GetNEff()
     }
     if (fDetector == kHyperK20BnL5mPMT) {
       photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
-      photoCoverage /= 1.11; //  5k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 18952 20-inch PMTs
+      photoCoverage /= 1.11; //  5k mPMT modules (19 PMTs, 3" diameter) have 11% the area of 18952 20-inch PMTs
     }
     if (fDetector == kHyperK20BnL10mPMT) {
       photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs

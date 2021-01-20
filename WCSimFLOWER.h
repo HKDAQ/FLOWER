@@ -19,7 +19,7 @@ using std::vector;
 class WCSimFLOWER {
 
  public:
-  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose);
+  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose, std::vector<bool> masked_pmt=std::vector<bool>());
   ~WCSimFLOWER() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
@@ -57,8 +57,11 @@ class WCSimFLOWER {
   float    fDarkRate;
   float    fDarkRate2;
   int      fNallPMTs;
+  int      fNallPMTs_nomask;
   int       fNPMTs;
   int       fNPMTs2;
+  int       fNPMTs_nomask;
+  int       fNPMTs2_nomask;
   int       fNWorkingPMTs;
   int       fNWorkingPMTs2;
   float    fNeighbourDistance;
@@ -80,6 +83,8 @@ class WCSimFLOWER {
   float fNEffMod;
   float fERec;
 
+  vector<bool>   fMaskedPMTs;
+  
   vector<int>    fTubeIds;
   vector<float> fDistance;
   vector<float>  fTimes;
