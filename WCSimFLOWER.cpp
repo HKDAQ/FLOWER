@@ -394,6 +394,8 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
       if(fVerbose > 2)
 	      cout << "\tTube " << tubeID << " has " << neighbours->size() << " neighbours" << endl;
     }//ipmt
+    
+    f.Close();
   }//reading values
   else {
     if(fVerbose > 0)
@@ -451,6 +453,7 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     }//ipmt
     t->Write();
     delete t;
+    f.Close();
   }//calculating values
   if(fVerbose > 1)
     cout << "GetNearestNeighbours() finished" << endl;
