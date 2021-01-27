@@ -101,11 +101,6 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 
 		// Loop over triggers in the event
 		for (int index = 0 ; index < event->GetNumberOfEvents(); index++) {
-			// We don't have secondary decays so shouldn't observe more than 1 trigger per event.
-			// If we do, it's noise (because the NDigits trigger in WCSim is not optimized for HK).
-			// Those would get filtered later in energy cuts, but for simplicity, we ignore them here.
-			if (index == 1) continue;
-
 			trigger = event->GetTrigger(index);
 			ncherenkovdigihits = trigger->GetNcherenkovdigihits();
 			if (verbose) std::cout << "ncherenkovdigihits: " << ncherenkovdigihits << std::endl;
@@ -171,7 +166,7 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 	} // End of loop over events
 	timer.Print();
 
-	// display histograms
+	// display histogram(s)
 	float winScale = 0.75;
 	int nWide = 1;
 	int nHigh = 1;
