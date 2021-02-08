@@ -598,20 +598,19 @@ void WCSimFLOWER::CorrectEnergy()
       // use fNEffMod (with occupancy to power of 1.4)
       fERec = 0.000001148*pow(fNEffMod, 2) + 0.02032*fNEffMod + 1.94;
     break;
-  case kHyperK20BnL0mPMT: 
-    fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
-    break;
   case kHyperK40BnL0mPMT: 
     fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
     break;
-  case kHyperK20BnL3mPMT: 
-    fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
-    break;
-  case kHyperK20BnL5mPMT: 
-    fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
+  case kHyperK20BnL0mPMT:
+    // This relation was calibrated using kHyperK20BnL10mPMT MC and LEAF (B&L only)
+    fERec = 0.000002645 * pow(fNEff, 2) + 0.0282 * fNEff + 0.109;
+    // fERec = 0.000002740 * pow(fNEff, 2) + 0.02787 * fNEff + 0.211; // with BONSAI instead of LEAF
     break;
   case kHyperK20BnL10mPMT:
-    fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
+  case kHyperK20BnL5mPMT:
+  case kHyperK20BnL3mPMT:
+    // This relation was calibrated using kHyperK20BnL10mPMT MC and LEAF-hybrid.
+    fERec = 0.000004678 * pow(fNEff, 2) + 0.0226 * fNEff + 0.946;
     break;
   }
   if(fVerbose > 0) {
