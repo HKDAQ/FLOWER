@@ -23,6 +23,7 @@ class WCSimFLOWER {
   ~WCSimFLOWER() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
+  float GetNEffHits() { return fNEff; }
 
   //override default values with these methods
   void SetDarkRate(float darkrate);
