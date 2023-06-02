@@ -1,0 +1,5 @@
+# ${PROJECT_NAME}Config.cmake
+
+get_filename_component( @PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH )
+
+include("${@PROJECT_NAME@_CMAKE_DIR}/@PROJECT_NAME@_Library_Targets.cmake")
