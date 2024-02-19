@@ -13,7 +13,7 @@ WCSIMLIBS     = -L$(WCSIM_BUILD_DIR)/lib -lWCSimRoot
 CPPFLAGS  += -Wno-deprecated 
 CPPFLAGS  += $(ROOTCFLAGS) $(WCSIMINCS)
 EXTRALIBS += $(ROOTLIBS) $(WCSIMLIBS)
-CXXFLAGS  += -g
+#CXXFLAGS  += -g
 
 CXX = g++
 #CXX = $(shell which g++)
