@@ -1,12 +1,12 @@
 {
-  TString wcsim_topdir   = gSystem->Getenv("WCSIMDIR");
+  TString wcsim_topdir   = gSystem->Getenv("WCSIM_BUILD_DIR");
   TString bonsai_topdir  = gSystem->Getenv("BONSAIDIR");
   TString flower_topdir = gSystem->Getenv("FLOWERDIR");
 
   TString mp = gROOT->GetMacroPath();
   TString ip;
 
-  TString wcsim_inc   = wcsim_topdir   + "/include";
+  TString wcsim_inc   = wcsim_topdir   + "/include/WCSim";
   TString bonsai_inc  = bonsai_topdir  + "/bonsai";
   TString flower_inc = flower_topdir;
 
