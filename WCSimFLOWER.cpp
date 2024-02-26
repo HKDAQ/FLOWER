@@ -375,7 +375,7 @@ void WCSimFLOWER::FindMaxTimeInterval()
 
 void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 {
-  TString fname = TString::Format("%s/%s_%.5f.root", GetFLOWERDataDir().Data(), fDetectorName.c_str(), fNeighbourDistance);
+  TString fname = TString::Format("%s/flower_nn_%s_%.5f.root", GetFLOWERDataDir().Data(), fDetectorName.c_str(), fNeighbourDistance);
   TFile f(fname);
   TTree * t;
   int tubeID;
