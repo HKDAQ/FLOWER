@@ -13,35 +13,105 @@ using std::endl;
 using std::cerr;
 
 const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
+const int FIRST_PMT2 = 100000;
 
-WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
-  : fLightGroupSpeed(21.58333), // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
+
+WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose, std::vector<bool> masked_pmts)
+  : fLightGroupSpeed(21.58333), // speed of light in water (in cm/ns), value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
     fDetector(DetectorEnumFromString(detectorname)),
     fVerbose(verbose),
     fGeom(geom),
     fLongDuration(100),
-    fShortDuration(50)
+    fShortDuration(50),
+    fMaskedPMTs(masked_pmts)
 {
   switch (fDetector) {
   case kSuperK:
     fDarkRate = 4.2;
+    fDarkRate2 = 0;
     fNPMTs = 11146;
+    fNPMTs_nomask = 11146;
+    fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 1767;
     fTopBottomDistanceHi = 1768;
     break;
   case kHyperK40:
     fDarkRate = 8.4;
+    fDarkRate2 = 0;
     fNPMTs = 38448;
+    fNPMTs_nomask = 38448;
+    fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
   case kHyperK20:
     fDarkRate = 8.4;
+    fDarkRate2 = 0;
     fNPMTs = 19462;
+    fNPMTs_nomask = 19462;
+    fNPMTs2 = 0;
+    fNPMTs2_nomask = 0;
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL0mPMT: // WCSim Hybrid 20% case, result from 20k BL + 10k mPMTs with mask over 100% of 10k mPMT modules
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 0; // true number of 7.5 cm PMTs in the files (for PMT Id check). Actually 182704 here, but FLOWER should not see any hit from these PMTs
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK40BnL0mPMT: // WCSim Hybrid 40% case
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 38952;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 38952; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 0; // total number of 7.5cm PMTs (0k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 0; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
+    fNeighbourDistance = 102;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL3mPMT: // WCSim Hybrid 20% + 3k mPMT case, result from 20k BL + 10k mPMTs with mask over 70% of 10k mPMT modules
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 54853; // total number of 7.5cm PMTs (3k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL5mPMT: // WCSim Hybrid 20% + 5k mPMT case, result from 20k BL + 10k mPMTs with mask over 50% of 10k mPMT modules
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 91352; // total number of 7.5cm PMTs (5k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperK20BnL10mPMT:  // WCSim Hybrid 20% + 10k mPMT case, result from 20k BL + 10k mPMTs with mask over 0% of 10k mPMT modules
+    fDarkRate = 8.4;  // dark rate of 50cm Box&Line PMTs
+    fDarkRate2 = 0.3; // dark rate of 7.5cm PMTs in mPMT modules
+    fNPMTs = 19208;   // total number of 50cm Box&Line PMTs
+    fNPMTs_nomask = 19208; // true number of 50cm cm PMTs in the files (for PMT Id check).
+    fNPMTs2 = 182704; // total number of 7.5cm PMTs (10k mPMT modules, 19 PMTs each)
+    fNPMTs2_nomask = 182704; // true number of 7.5 cm PMTs in the files (for PMT Id check). 
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -52,6 +122,22 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     break;
   }
 
+  fNallPMTs = fNPMTs;
+  fNallPMTs_nomask = fNPMTs_nomask;
+  
+  if (fNPMTs2 > 0)
+    fNallPMTs = FIRST_PMT2 + fNPMTs2;
+  if (fNPMTs2_nomask > 0)
+    fNallPMTs_nomask = FIRST_PMT2 + fNPMTs2_nomask;
+    
+  if ( fMaskedPMTs.size() == 0 ) {
+    fMaskedPMTs.resize(fNallPMTs_nomask,false);
+  }
+  else if ( fMaskedPMTs.size() < fNallPMTs_nomask ) {
+    cerr << "Masked PMT list is invalid " << fMaskedPMTs.size() << " < " << fNallPMTs_nomask << endl;
+    exit(-1);
+  }
+
   cout << "Using default values for detector " << fDetectorName << " " << fDetector << endl;
 
   cout << "\tUsing default dark rate " << fDarkRate << " kHz" << endl;
@@ -59,8 +145,14 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
 
   cout << "\tUsing default NPMTs " << fNPMTs << endl;
   
-  cout << "\tAssumming all PMTs are working" << endl;
+  cout << "\tUsing default dark rate for 2nd PMT type " << fDarkRate2 << " kHz" << endl;
+  fDarkRate2 /= 1000000; //convert to per ns
+
+  cout << "\tUsing default NPMTs for 2nd PMT type " << fNPMTs2 << endl;
+  
+  cout << "\tAssuming all PMTs are working" << endl;
   fNWorkingPMTs = fNPMTs;
+  fNWorkingPMTs2 = fNPMTs2;
 
   cout << "\tUsing default neighbour distance " << fNeighbourDistance << endl;
 
@@ -75,51 +167,72 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   cout << "\tA similar r-cut for caps with fewer neighbours is NOT YET implemented" << endl;
 
   //pre-assign vector memory
-  fTimes               .reserve(fNPMTs);
-  fTubeIds             .reserve(fNPMTs);
-  fDistance            .reserve(fNPMTs);
-  fTimesCorrected      .reserve(fNPMTs);
-  fTimesCorrectedSorted.reserve(fNPMTs);
+  fTimes               .reserve(fNallPMTs);
+  fTubeIds             .reserve(fNallPMTs);
+  fDistance            .reserve(fNallPMTs);
+  fTimesCorrected      .reserve(fNallPMTs);
+  fTimesCorrectedSorted.reserve(fNallPMTs);
+  
 
   GetNearestNeighbours(overwrite_nearest);
 }
 
+// Note: Changing these values without also changing the calibration in CorrectEnergy() may not give completely accurate results.
 void WCSimFLOWER::SetDarkRate(float darkrate)
 {
   fDarkRate = darkrate;
-  cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
+  if (fVerbose >= 0) cout << "Setting DarkRate to " << fDarkRate << " kHz" << endl;
   fDarkRate /= 1000000; //convert to per ns
+}
+
+void WCSimFLOWER::SetDarkRate2(float darkrate)
+{
+  fDarkRate2 = darkrate;
+  if (fVerbose >= 0) cout << "Setting DarkRate to " << fDarkRate2 << " kHz" << endl;
+  fDarkRate2 /= 1000000; //convert to per ns
 }
 
 void WCSimFLOWER::SetNPMTs(int npmts)
 {
   fNPMTs = npmts;
-  cout << "Setting NPMTs to " << fNPMTs << endl;
+  if (fVerbose >= 0) cout << "Setting NPMTs to " << fNPMTs << endl;
+}
+
+void WCSimFLOWER::SetNPMTs2(int npmts)
+{
+  fNPMTs2 = npmts;
+  if (fVerbose >= 0) cout << "Setting NPMTs2 to " << fNPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNWorkingPMTs(int nworkingpmts)
 {
   fNWorkingPMTs = nworkingpmts;
-  cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
+  if (fVerbose >= 0) cout << "Setting NWorkingPMTs to " << fNWorkingPMTs << endl;
+}
+
+void WCSimFLOWER::SetNWorkingPMTs2(int nworkingpmts)
+{
+  fNWorkingPMTs2 = nworkingpmts;
+  if (fVerbose >= 0) cout << "Setting NWorkingPMTs2 to " << fNWorkingPMTs2 << endl;
 }
 
 void WCSimFLOWER::SetNeighbourDistance(float neighbour_distance, bool overwrite_nearest)
 {
   fNeighbourDistance = neighbour_distance;
-  cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
+  if (fVerbose >= 0) cout << "Setting NeighbourDistance to " << fNeighbourDistance << endl;
   GetNearestNeighbours(overwrite_nearest);
 }
 
 void WCSimFLOWER::SetShortDuration(float shortduration)
 {
   fShortDuration = shortduration;
-  cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
+  if (fVerbose >= 0) cout << "Setting ShortDuration to " << fShortDuration << " ns" << endl;
 }
 
 void WCSimFLOWER::SetLongDuration(float longduration)
 {
   fLongDuration = longduration;
-  cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
+  if (fVerbose >= 0) cout << "Setting LongDuration to " << fLongDuration << " ns" << endl;
 }
 
 void WCSimFLOWER::SetTopBottomDistance(float hi, float lo)
@@ -146,6 +259,16 @@ WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
     return kSuperK;
   else if (!name.compare("HyperK_20perCent"))
     return kHyperK20;
+  else if (!name.compare("HyperK_20BnL0mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL0mPMT;
+  else if (!name.compare("HyperK_40BnL0mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK40BnL0mPMT;
+  else if (!name.compare("HyperK_20BnL3mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL3mPMT;
+  else if (!name.compare("HyperK_20BnL5mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL5mPMT;
+  else if (!name.compare("HyperK_20BnL10mPMT")) // TODO: name should be consistent with https://github.com/bquilain/WCSim/blob/hybridPMT/src/WCSimDetectorConfigs.cc
+    return kHyperK20BnL10mPMT;
   cerr << "DetectorEnumFromString() Unknown detector name: " << name << endl;
   exit(-1);
 }
@@ -212,12 +335,11 @@ void WCSimFLOWER::FindMaxTimeInterval()
     time   = fTimesCorrectedSorted[i];
     for (unsigned int j = i; j < fNDigits; j++) {
       if (fTimesCorrectedSorted[j] < time + fLongDuration) {
-	nlong++;
-	if (fTimesCorrectedSorted[j] < time + fShortDuration)
-	  nshort++;
-      }
-      else
-	break;
+        nlong++;
+        if (fTimesCorrectedSorted[j] < time + fShortDuration)
+          nshort++;
+      } else
+        	break;
     }//j
 
     if (nshort > fNMaxShort) {
@@ -234,14 +356,15 @@ void WCSimFLOWER::FindMaxTimeInterval()
     if(fTimesCorrected[i] >= fStartTime && fTimesCorrected[i] < (fStartTime + fShortDuration)) {
       fDistanceShort[j] = fDistance[i];
       fTubeIdsShort [j] = fTubeIds [i];
-      if(fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNPMTs)
-	cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
-	     << "Are you using the correct input file / geometry option combination" << endl;
+      if (fTubeIdsShort[j] <= 0 || fTubeIdsShort[j] > fNallPMTs_nomask || (fTubeIdsShort[j] > fNPMTs_nomask && fTubeIdsShort[j] < FIRST_PMT2)
+         || fMaskedPMTs[fTubeIdsShort[j]] )
+        cerr << "fTubeIdsShort has picked up an invalid ID: " << fTubeIdsShort[j] << endl
+             << "Are you using the correct input file / geometry option combination" << endl;
       j++;
     }
   }//i
 
-  if(fVerbose)
+  if(fVerbose > 0)
     std::cout << "Maximum of " << fNMaxShort << " hits in " 
 	      << fShortDuration << " ns window starting at "
 	      << fStartTime << " ns" << std::endl
@@ -269,8 +392,10 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
       t->GetEntry(ipmt);
       fNeighbours[tubeID] = *neighbours;
       if(fVerbose > 2)
-	cout << "\tTube " << tubeID << " has " << neighbours->size() << " neighbours" << endl;
+	      cout << "\tTube " << tubeID << " has " << neighbours->size() << " neighbours" << endl;
     }//ipmt
+    
+    f.Close();
   }//reading values
   else {
     if(fVerbose > 0)
@@ -285,40 +410,50 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     WCSimRootPMT pmt, otherPMT;
     int tubeID_j;
     float x, y, z;
-    for (unsigned int ipmt = 0; ipmt < fNPMTs; ipmt++) {
-      if(fVerbose > 0 && ipmt % (fNPMTs / 10) == 0)
-	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs << endl;
+    // Loop over 50cm PMTs to find their neighbours (don't search for neighbours of mPMTs, see https://github.com/HKDAQ/FLOWER/issues/12)
+    for (unsigned int ipmt = 0; ipmt < fNPMTs_nomask; ipmt++) {        
+      if(fVerbose && ipmt % (fNPMTs_nomask / 10) == 0)
+      	cout << "Finding nearest neighbours for PMT " << ipmt << " of " << fNPMTs_nomask << endl;
       pmt = fGeom->GetPMT(ipmt);
       tubeID = pmt.GetTubeNo();
       x = pmt.GetPosition(0);
       y = pmt.GetPosition(1);
       z = pmt.GetPosition(2);
       if(fVerbose > 3)
-	cout << "Tube " << tubeID << " x,y,z " << x << "," << y << "," << z << endl;
+	      cout << "Tube " << tubeID << " x,y,z " << x << "," << y << "," << z << endl;
 
-      // loop over all PMTs and get the IDs of each ones that are "close"
-      // In a 3x3 grid around PMT 'tubeID'
-      // explitly uses distance to neighboring PMTs 
-      //  (for 40% coverage with 50cm PMTs, this is 70.71 cm (100 cm diagonally))
+      // loop over all PMTs and get the IDs of each ones that are closer that fNeighbourDistance
       neighbours.clear();
-      for (unsigned int jpmt = 0; jpmt < fNPMTs; jpmt++) {
-	if(jpmt == ipmt) continue; // don't count the current PMT itself
-	otherPMT = fGeom->GetPMT(jpmt);
-	tubeID_j = otherPMT.GetTubeNo();
-	if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
-		 pow(y - otherPMT.GetPosition(1), 2) +
-		 pow(z - otherPMT.GetPosition(2), 2)) < fNeighbourDistance) {
-	  neighbours.push_back(tubeID_j);
-	}
+      for (unsigned int jpmt = 0; jpmt < fNallPMTs_nomask; jpmt++) {
+        if(jpmt == ipmt) continue; // don't count the current PMT itself
+        if(fMaskedPMTs[tubeID]) continue; // don't count masked PMTs
+        if (jpmt < FIRST_PMT2) {
+          if (jpmt >= fNPMTs_nomask ) continue; // this PMT doesn't exist
+          otherPMT = fGeom->GetPMT(jpmt);
+          tubeID_j = otherPMT.GetTubeNo();	      
+          if(fMaskedPMTs[tubeID_j]) continue; // don't count masked PMTs
+        }
+        else {
+          otherPMT = fGeom->GetPMT(jpmt - FIRST_PMT2, true);
+          tubeID_j = otherPMT.GetTubeNo();
+          if(fMaskedPMTs[tubeID_j+FIRST_PMT2]) continue; // don't count masked PMTs
+        }
+
+        if (sqrt(pow(x - otherPMT.GetPosition(0), 2) + 
+                 pow(y - otherPMT.GetPosition(1), 2) +
+                 pow(z - otherPMT.GetPosition(2), 2)) < fNeighbourDistance) {
+          neighbours.push_back(tubeID_j);
+        }
       }//jpmt
       fNeighbours[tubeID] = neighbours;
       if(fVerbose > 2)
-	cout << "\tTube " << tubeID << " has " << neighbours.size() << " neighbours" << endl;
+      	cout << "\tTube " << tubeID << " has " << neighbours.size() << " neighbours" << endl;
       //and save in the tree
       t->Fill();
     }//ipmt
     t->Write();
     delete t;
+    f.Close();
   }//calculating values
   if(fVerbose > 1)
     cout << "GetNearestNeighbours() finished" << endl;
@@ -327,12 +462,12 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
 void WCSimFLOWER::GetNEff()
 {
   int nearbyHits, tubeID;
-  float ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency;
-  float nEffHit, nEffHit2, x, y, z;
+  float ratio, occupancy, lateHits, darkNoise, photoCoverage, waterTransparency, liveAreaFraction;
+  float nEffHit, nEffHitMod, x, y, z;
   vector<int> neighbours;
   WCSimRootPMT pmt;
   fNEff = 0;
-  fNEff2 = 0;
+  fNEffMod = 0;
 
   for (unsigned int i = 0; i < fNMaxShort; i++) {
     tubeID = fTubeIdsShort[i];
@@ -345,56 +480,76 @@ void WCSimFLOWER::GetNEff()
     z = pmt.GetPosition(2);
 
     // Calculate occupancy to correct for multiple hits on a single PMT
-    nearbyHits = 0;
-    neighbours = fNeighbours[tubeID];
-    for(unsigned int j = 0; j < fNMaxShort; j++) {
-      if(std::find(neighbours.begin(), neighbours.end(), fTubeIdsShort[j]) != neighbours.end())
-	nearbyHits++;
-    }//j
+    if (tubeID <= fNPMTs_nomask) {
+      nearbyHits = 0;
+      neighbours = fNeighbours[tubeID];
+      for(unsigned int j = 0; j < fNMaxShort; j++) {
+        if(std::find(neighbours.begin(), neighbours.end(), fTubeIdsShort[j]) != neighbours.end())
+          nearbyHits++;
+      }//j
 
-    // PMTs at the top/bottom edge of the barrel only have five neighbours
-    if(abs(z) > fTopBottomDistanceLo && abs(z) < fTopBottomDistanceHi)
-      // TODO: deal with PMTs at the edge of the top/bottom
-      ratio = nearbyHits / 5.0;
-    else
-      ratio = nearbyHits / 8.0;
+      // PMTs at the top/bottom edge of the barrel only have five neighbours
+      if(abs(z) > fTopBottomDistanceLo && abs(z) < fTopBottomDistanceHi)
+        // TODO: deal with PMTs at the edge of the top/bottom
+        ratio = nearbyHits / 5.0;
+      else
+        ratio = nearbyHits / 8.0;
 
-    if (ratio == 0) {
-      occupancy = 1.0;
-    } else if (ratio < 1) {
-      occupancy = log(1 / (1-ratio)) / ratio; // from Poisson statistics
+      if (ratio == 0) {
+        occupancy = 1.0;
+      } else if (ratio < 1) {
+        occupancy = log(1 / (1-ratio)) / ratio; // from Poisson statistics
+      } else {
+        occupancy = 3.0;
+      }
     } else {
-      occupancy = 3.0;
+      // Ignore occupancy correction for 3" PMTs in mPMTs, since they are highly unlikely to receive multiple hits due to their small size.
+      occupancy = 1.0;
     }
 
     // correct for delayed hits (e.g. due to scattering)
-    lateHits = (fNMaxLong - fNMaxShort - (fNWorkingPMTs * fDarkRate * fShortDuration)) / fNMaxShort;
+    lateHits = (fNMaxLong - fNMaxShort - (fNWorkingPMTs * fDarkRate * fShortDuration)
+                                       - (fNWorkingPMTs2 * fDarkRate2 * fShortDuration)) / fNMaxShort;
 
     // substract dark noise hits
-    darkNoise = (fNWorkingPMTs * fDarkRate * fShortDuration) / fNMaxShort;
+    darkNoise = (fNWorkingPMTs * fDarkRate * fShortDuration + fNWorkingPMTs2 * fDarkRate2 * fShortDuration) / fNMaxShort;
 
     // calculate effective coverage to correct for photoCoverage
     // this depends on angle of incidence, see Fig. 4.5 (left) of http://www-sk.icrr.u-tokyo.ac.jp/sk/_pdf/articles/2016/doc_thesis_naknao.pdf
     // TODO: take into account azimuthal dependence as show in Fig. 4.5 (right); currently assumes phi=0
-    float dotProduct = pmt.GetOrientation(0)*(fVertex[0] - x) +
-      pmt.GetOrientation(1)*(fVertex[1] - y) +
-      pmt.GetOrientation(2)*(fVertex[2] - z);
+    float dotProduct = pmt.GetOrientation(0) * (fVertex[0] - x) +
+                       pmt.GetOrientation(1) * (fVertex[1] - y) +
+                       pmt.GetOrientation(2) * (fVertex[2] - z);
     float theta = acos( dotProduct / fDistanceShort[i]) * 180 / 3.14159265;
     if (!((theta >= 0.) and (theta <= 89.99))) theta = 0; // we have apparently mis-reconstructed the vertex, so let's set ...
                                                           // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
     
-    photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)];
+    photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)]; // 1 over photocoverage, assuming SuperK or HyperK_40perCent
     if (fDetector == kHyperK20)
-      photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
-
+      photoCoverage *= 38448 / float(fNPMTs); // ratio of number of PMTs
+    if (fDetector == kHyperK20BnL0mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+    }
+    if (fDetector == kHyperK20BnL3mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+      photoCoverage /= 1.06; //  3k mPMT modules (19 PMTs, 3" diameter) have  6% the area of 20055 20-inch PMTs
+    }
+    if (fDetector == kHyperK20BnL5mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+      photoCoverage /= 1.11; //  5k mPMT modules (19 PMTs, 3" diameter) have 11% the area of 18952 20-inch PMTs
+    }
+    if (fDetector == kHyperK20BnL10mPMT) {
+      photoCoverage *= 38952 / float(fNPMTs); // ratio of number of B&L PMTs
+      photoCoverage /= 1.22; // 10k mPMT modules (19 PMTs, 3" diameter) have 22% the area of 19208 20-inch PMTs
+    }
     // correct for scattering in water
     waterTransparency = exp(fDistanceShort[i] / fLambdaEff);
 
     nEffHit = (occupancy + lateHits - darkNoise) * photoCoverage * waterTransparency;
     fNEff += nEffHit;
     // ad-hoc modification for low photocoverage
-    nEffHit2 = (pow(occupancy, 1.4) + lateHits - darkNoise) * photoCoverage * waterTransparency;
-    fNEff2 += nEffHit2;
+    nEffHitMod = (pow(occupancy, 1.4) + lateHits - darkNoise) * photoCoverage * waterTransparency;
+    fNEffMod += nEffHitMod;
     
     if (fVerbose > 1) {
       std::cout << "\n*** PMT hit #" << i << " on tube " << tubeID << " ***************************************\n";
@@ -408,19 +563,20 @@ void WCSimFLOWER::GetNEff()
   } // i //end of loop over hits in 50 ns interval
 
 
- // correct for dead PMTs; convert nWorkingPMTs to float because integer division is inaccurate
-  fNEff  *= fNPMTs / float(fNWorkingPMTs);
-  fNEff2 *= fNPMTs / float(fNWorkingPMTs);
+  // correct for dead PMTs
+  liveAreaFraction = (fNPMTs + 0.4275 * fNPMTs2) / (fNWorkingPMTs + 0.4275 * fNWorkingPMTs2); // photosensitive area of 19x3" PMTs is 0.4275 times that of 1x20" PMT
+  fNEff *= liveAreaFraction;
+  fNEffMod *= liveAreaFraction;
 
-  if(fVerbose) {
+  if(fVerbose > 0) {
     std::cout << endl << "***************************************" << endl
 	      << "nEff for this event: " << fNEff << endl
-	      << " (nEff2 for low photo-coverage is: " << fNEff2 << ")" << endl;
+	      << " (nEffMod for low photo-coverage is: " << fNEffMod << ")" << endl;
   }
 }
 void WCSimFLOWER::CorrectEnergy()
 {
-  // reconstruct energy from fNEff; this is approximately linear, except at very low energies
+  // reconstruct energy from fNEff; this should be approximately linear
   switch(fDetector) {
   case kSuperK:
     if (fNEff<392) 
@@ -439,11 +595,25 @@ void WCSimFLOWER::CorrectEnergy()
       // use fNEff, as normal
       fERec = 0.00000255*pow(fNEff, 2) + 0.0215*fNEff + 0.429;
     else
-      // use fNEff2 (with occupancy to power of 1.4)
-      fERec = 0.000001148*pow(fNEff2, 2) + 0.02032*fNEff2 + 1.94;
+      // use fNEffMod (with occupancy to power of 1.4)
+      fERec = 0.000001148*pow(fNEffMod, 2) + 0.02032*fNEffMod + 1.94;
+    break;
+  case kHyperK40BnL0mPMT: 
+    fERec = 1.0*fNEff + 0.0; // TODO: calibrate relation for this detector geometry
+    break;
+  case kHyperK20BnL0mPMT:
+    // This relation was calibrated using kHyperK20BnL10mPMT MC and LEAF (B&L only)
+    fERec = 0.000002645 * pow(fNEff, 2) + 0.0282 * fNEff + 0.109;
+    // fERec = 0.000002740 * pow(fNEff, 2) + 0.02787 * fNEff + 0.211; // with BONSAI instead of LEAF
+    break;
+  case kHyperK20BnL10mPMT:
+  case kHyperK20BnL5mPMT:
+  case kHyperK20BnL3mPMT:
+    // This relation was calibrated using kHyperK20BnL10mPMT MC and LEAF-hybrid.
+    fERec = 0.000004678 * pow(fNEff, 2) + 0.0226 * fNEff + 0.946;
     break;
   }
-  if(fVerbose) {
+  if(fVerbose > 0) {
     std::cout << "Reconstructed energy = " << fERec << " MeV" << std::endl;
   }
 }
