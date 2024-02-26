@@ -1,9 +1,10 @@
 # FLOWER: soFtware for LOW-Energy Reconstruction
 An energy reconstruction script for low-energy events that works with (hk-)BONSAI and other low-energy reconstruction tools - it just requires a positional vertex.
 
-## Compiling
+## Compiling `WCSimFlower`
 Make sure the following are sourced
-* WCSim (`$WCSIMDIR` set)
+* WCSim (`$WCSIM_BUILD_DIR` set)
+  Note that the WCSim dependence of the `WCSimFlower` class is confined to geometry information.
 
 Then
 ```bash
@@ -11,9 +12,9 @@ export FLOWERDIR=/path/to/FLOWER
 make
 ```
 
-## Running the WCSim/BONSAI script bundled here
-Make sure the following are sourced
-* WCSim (`$WCSIMDIR` set)
+## Running the FLOWER/BONSAI script bundled here
+Make sure the following software is setup correctly
+* WCSim (`$WCSIM_BUILD_DIR` set)
 * BONSAI (`$BONSAIDIR` set)
 * FLOWER (`$FLOWERDIR` set)
 
@@ -27,7 +28,7 @@ rootflower -b -q flower_with_bonsai.C+'("/path/to/wcsim/file.root",1,"SuperK")'
 Note that `$FLOWERDATADIR` is used to store information that takes a while to calculate, and that only needs to be done once per geometry (e.g. the nearest neighbours of each PMT). If `$FLOWERDATADIR` is not set, or set to a directory that doesn't exist, `$FLOWERDIR/data/` will be used instead
 
 ## Running in other code
-* Construct a class member, giving it a detectorname (it sets default values and determines the exact energy correction factors) and detector geometry
+* Construct a class member, giving it a `detectorname` (it sets default values and determines the exact energy correction factors) and detector geometry
 ```
 WCSimFlower(const char * detectorname, WCSimRootGeom * geom, int verbose);
 ```

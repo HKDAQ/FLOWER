@@ -4,16 +4,16 @@
 
 ROOTCFLAGS   := $(shell root-config --cflags) -DUSE_ROOT -fPIC
 ROOTLIBS     := $(shell root-config --libs)
-ifndef WCSIMDIR
-$(error Environment variable WCSIMDIR is not set)
+ifndef WCSIM_BUILD_DIR
+$(error Environment variable WCSIM_BUILD_DIR is not set)
 endif
-WCSIMINCS     = -I$(WCSIMDIR)/include
-WCSIMLIBS     = -L$(WCSIMDIR) -lWCSimRoot
+WCSIMINCS     = -I$(WCSIM_BUILD_DIR)/include/WCSim
+WCSIMLIBS     = -L$(WCSIM_BUILD_DIR)/lib -lWCSimRoot
 
 CPPFLAGS  += -Wno-deprecated 
 CPPFLAGS  += $(ROOTCFLAGS) $(WCSIMINCS)
 EXTRALIBS += $(ROOTLIBS) $(WCSIMLIBS)
-#CXXFLAGS  += ""
+#CXXFLAGS  += -g
 
 CXX = g++
 #CXX = $(shell which g++)

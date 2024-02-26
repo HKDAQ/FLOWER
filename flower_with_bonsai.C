@@ -15,7 +15,6 @@
 #include <TSystem.h>
 #include <TStopwatch.h>
 
-#if !defined(__CINT__) || defined(__MAKECINT__)
 //WCSim
 #include "WCSimRootEvent.hh"
 #include "WCSimRootGeom.hh"
@@ -23,7 +22,6 @@
 #include "WCSimBonsai.hh"
 //FLOWER
 #include "WCSimFLOWER.h"
-#endif
 
 // low energy reconstruction
 int flower_with_bonsai(const char *filename="../wcsim.root",
@@ -33,25 +31,6 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 {
 	// set up histogram
 	TH1F *recEnergy = new TH1F("hErec", "Reconstructed Energy", 50, 0, 100);
-
-#if !defined(__MAKECINT__)
-	// Load the library with class dictionary info (create with "gmake shared")
-	if (getenv ("WCSIMDIR") != NULL) {
-		gSystem->Load("${WCSIMDIR}/libWCSimRoot.so");
-	} else {
-		gSystem->Load("../WCSim/libWCSimRoot.so");
-	}
-	if (getenv ("BONSAIDIR") != NULL) {
-		gSystem->Load("${BONSAIDIR}/libWCSimBonsai.so");
-	} else {
-		gSystem->Load("../hk-BONSAI/libWCSimBonsai.so");
-	}
-	if (getenv ("FLOWERDIR") != NULL) {
-		gSystem->Load("${FLOWERDIR}/libWCSimFLOWER.so");
-	} else {
-		gSystem->Load("../FLOWER/libWCSimFLOWER.so");
-	}
-#endif
 
 	WCSimBonsai* bonsai = new WCSimBonsai();
 

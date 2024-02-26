@@ -54,7 +54,7 @@ void t2k_style()
 
   // use bold lines and markers
   t2kStyle->SetMarkerStyle(20);
-  t2kStyle->SetHistLineWidth(1.85);
+  t2kStyle->SetHistLineWidth(2);
   t2kStyle->SetLineStyleString(2,"[12 12]"); // postscript dashes
 
   // get rid of X error bars and y error bar caps
@@ -76,7 +76,8 @@ void t2k_style()
   //t2kStyle->SetStatStyle(0); //make stat boxes see through
   t2kStyle->SetStatBorderSize(0);
   t2kStyle->SetTextFont(42); //less bold
-
+  */
+  
   // Add a greyscale palette for 2D plots
   /*
   int ncol=50;
