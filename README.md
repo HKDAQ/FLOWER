@@ -1,5 +1,8 @@
 # FLOWER: soFtware for LOW-Energy Reconstruction
-An energy reconstruction script for low-energy events that works with (hk-)BONSAI and other low-energy reconstruction tools - it just requires a positional vertex.
+An energy reconstruction script for low-energy events in Hyper-Kamiokande.
+
+FLOWER requires a trigger with a reconstructed event vertex from an external tool, such as (hk-)BONSAI. It then iterates over detected hits in a short time window and applies corrections for detector effects to estimate the total number of Cherenkov photons emitted by the particle. Finally, it matches this number to a reconstructed particle energy based on MC simulations.
+A detailed description of this method (which is based on the one used in Super-Kamiokande) and the individual corrections can be found in chapter 3.4.3 of [Jost Migenda’s PhD thesis](https://inspirehep.net/literature/1778697).
 
 ## Compiling `WCSimFlower`
 Make sure the following are sourced
