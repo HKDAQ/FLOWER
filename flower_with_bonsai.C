@@ -18,16 +18,19 @@
 //WCSim
 #include "WCSimRootEvent.hh"
 #include "WCSimRootGeom.hh"
+#include "WCSimRootOptions.hh"
 //BONSAI
 #include "WCSimBonsai.hh"
 //FLOWER
 #include "WCSimFLOWER.h"
 
 // low energy reconstruction
-int flower_with_bonsai(const char *filename="../wcsim.root",
-		     const int verbose=1,
-		     const bool overwrite_nearest = false,
-		     const char *detector="SuperK")
+int flower_with_bonsai(const char *detector, //sets the default nearest neighbour distances etc. Check DetectorEnumFromString inside WCSimFLOWER.cpp for allowed values
+		       const char *filename="../wcsim.root",
+		       const int  verbose=1,
+		       const bool overwrite_nearest = false, //if true, will overwrite the cached nearest neighbours file
+		       const double override_dark_rate = -99 //if positive, will override the default dark rate (taken from WCSimRootOptions)
+		       )
 {
 	// set up histogram
 	TH1F *recEnergy = new TH1F("hErec", "Reconstructed Energy", 50, 0, 100);
@@ -41,16 +44,37 @@ int flower_with_bonsai(const char *filename="../wcsim.root",
 		return -1;
 	}
 
-	// Read geometry from ROOT file and initialize Bonsai
+	// Read geometry from WCSim file
 	TTree *geotree = (TTree*)file->Get("wcsimGeoT");
 	WCSimRootGeom *geo = 0;
 	geotree->SetBranchAddress("wcsimrootgeom", &geo);
-	if (geotree->GetEntries() == 0) exit(9); // exit if no geometry is defined in the ROOT file
+	if (geotree->GetEntries() == 0) exit(9); // exit if no geometry is defined in the WCSim file
 	geotree->GetEntry(0);
+
+	//Initalise BONSAI
 	bonsai->Init(geo);
 
-	WCSimFLOWER * flower = new WCSimFLOWER(detector, geo, overwrite_nearest, verbose);
-
+	// Read options tree from WCSim file
+	TTree * opttree;
+	file->GetObject("wcsimRootOptionsT", opttree);
+	WCSimRootOptions * opt = 0;
+	opttree->SetBranchAddress("wcsimrootoptions", &opt);
+	if(opttree->GetEntries() == 0) exit(9); // exit if no options are defined in the WCSim file
+	opttree->GetEntry(0);
+	
+	//Initialise FLOWER
+	bool get_npmts_from_wcsimrootgeom = true;
+	WCSimFLOWER * flower = new WCSimFLOWER(detector, geo, get_npmts_from_wcsimrootgeom, overwrite_nearest, verbose);
+	if(override_dark_rate >= 0)
+	  flower->SetDarkRate(override_dark_rate);
+	else
+	  flower->SetDarkRate(opt->GetPMTDarkRate("tank"));
+	if(!flower->CheckNearestNeighbours()) {
+	  cerr << "Nearest neighbour distribution failure. Set nearest neighbour and try again" << endl;
+	  exit(8);
+	}
+	  
+	//Read event tree from WCSim file
 	TTree *tree = (TTree*)file->Get("wcsimT"); // Get a pointer to the tree from the file
 	WCSimRootEvent* event = new WCSimRootEvent(); // Create WCSimRootEvent to put stuff from the tree in
 	tree->SetBranchAddress("wcsimrootevent", &event); // Set branch address for reading from tree

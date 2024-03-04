@@ -14,13 +14,14 @@ using std::cerr;
 
 const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 
-WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
+WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool get_npmts_from_wcsimrootgeom, bool overwrite_nearest, int verbose)
   : fLightGroupSpeed(21.58333), // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
     fDetector(DetectorEnumFromString(detectorname)),
     fVerbose(verbose),
     fGeom(geom),
+    fGetNPMTsFromWCSimRootGeom(get_npmts_from_wcsimrootgeom),
     fLongDuration(100),
     fShortDuration(50)
 {
@@ -57,7 +58,12 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   cout << "\tUsing default dark rate " << fDarkRate << " kHz" << endl;
   fDarkRate /= 1000000; //convert to per ns
 
-  cout << "\tUsing default NPMTs " << fNPMTs << endl;
+  if(fGetNPMTsFromWCSimRootGeom) {
+    fNPMTs = fGeom->GetWCNumPMT();
+    cout << "\tUsing NPMTs from input WCSimRootGeom " << fNPMTs << endl;
+  }
+  else
+    cout << "\tUsing default NPMTs " << fNPMTs << endl;
   
   cout << "\tAssumming all PMTs are working" << endl;
   fNWorkingPMTs = fNPMTs;
@@ -456,4 +462,42 @@ TString WCSimFLOWER::GetFLOWERDataDir()
     dir = TString::Format("%s/data/", gSystem->Getenv("FLOWERDIR"));
   }
   return dir;
+}
+
+bool WCSimFLOWER::CheckNearestNeighbours()
+{
+  //count the number of occurences of each number of neighbours
+  std::map<unsigned int,int> counts;
+  for(auto const& neighbours : fNeighbours) {
+    const int n_neighbours = neighbours.second.size();
+    std::map<unsigned int,int>::iterator it(counts.find(n_neighbours));
+    if(it != counts.end())
+      it->second++;
+    else
+      counts[n_neighbours] = 1;
+  }//fNeighbours loop
+
+  //print
+  bool success = true;
+  cout << "Check number of neighbours" << endl;
+  for(auto const& count : counts) {
+    cout << count.first << "\t" << count.second << endl;
+
+    if(count.first <= 2) {
+      cerr << "Some PMTs have " << count.first << "neighbours. Increase neighbour distance & try again" << endl;
+      success = false;
+    }
+    else if(count.first >= 12) {
+      cerr << "Some PMTs have " << count.first << "neighbours. Decrease neighbour distance & try again" << endl;
+      success = false;
+    }
+  }
+
+  auto it = std::max_element(counts.begin(), counts.end());
+  if(it->first != 8) {
+    cerr << "Most PMTs should have 8 neighbours. Mode number of elements is " << it->first << endl;
+    success = false;
+  }
+  
+  return success;
 }

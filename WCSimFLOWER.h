@@ -19,7 +19,7 @@ using std::vector;
 class WCSimFLOWER {
 
  public:
-  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose);
+  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool get_npmts_from_wcsimrootgeom, bool overwrite_nearest, int verbose);
   ~WCSimFLOWER() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
@@ -34,6 +34,8 @@ class WCSimFLOWER {
   void SetTopBottomDistance(float hi, float lo);
 
   TString GetFLOWERDataDir();
+
+  bool CheckNearestNeighbours();
 
  private:
   enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20};
@@ -60,7 +62,8 @@ class WCSimFLOWER {
   int       fVerbose;
 
   WCSimRootGeom * fGeom;
-
+  bool fGetNPMTsFromWCSimRootGeom;
+  
   int    fNDigits;
   int    fNMaxShort;
   int    fNMaxLong;
