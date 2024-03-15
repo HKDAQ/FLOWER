@@ -23,6 +23,8 @@ class WCSimFLOWER {
   ~WCSimFLOWER() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
+  float RetrieveNEff() const {return fNEff;} ///< Get the effective number of hits. GetEnergy() should have already been called, in order to fill fNeff with a sensible value
+  float RetrieveNEff2() const {return fNEff2;} ///< Get the effective number of hits (second defintion). GetEnergy() should have already been called, in order to fill fNEff2 with a sensible value
 
   //override default values with these methods
   void SetDarkRate(float darkrate);
