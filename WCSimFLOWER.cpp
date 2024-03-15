@@ -285,7 +285,15 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     std::vector<int> * neighbours = 0;
     t->SetBranchAddress("neighbours", &neighbours);
     //loop over tree
-    for(long ipmt = 0; ipmt < t->GetEntries(); ipmt++) {
+    const int n_entries = t->GetEntries();
+    if(n_entries != fNPMTs) {
+      std::cerr << "Mismatch between number of PMTs FLOWER is assuming: " << fNPMTs
+		<< " and number of PMTs in the previously calculated nearest neighbours file: "
+		<< n_entries
+		<< " Exiting..." << endl;
+      exit(-1);
+    }
+    for(long ipmt = 0; ipmt < n_entries; ipmt++) {
       t->GetEntry(ipmt);
       fNeighbours[tubeID] = *neighbours;
       if(fVerbose > 2)
