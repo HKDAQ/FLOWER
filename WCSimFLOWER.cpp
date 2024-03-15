@@ -54,8 +54,10 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool g
     fDarkRate = 8.4;
     fNPMTs = 19746;
     fNeighbourDistance = 145;
-    fTopBottomDistanceLo = 2670;
-    fTopBottomDistanceHi = 2690;
+    //note that these are wide because there is an assymmetry in the PMT positions
+    // This still won't get the next row of PMTs, which are at -3179.352000000 & +3111.524000000
+    fTopBottomDistanceLo = 3180;
+    fTopBottomDistanceHi = 3260;
     break;
   default:
     cerr << "Unknown detector name " << fDetectorName << endl;
