@@ -46,9 +46,11 @@ int flower_with_bonsai(const char *detector, //sets the default nearest neighbou
 	}
 
 	// Open the output ROOT file & create a TTree
-	//Note that this is a flat tree that will be filled every trigger,
+	//Note: This is a flat tree that will be filled every trigger,
 	// such that if you have an input file with multiple triggers,
 	// some information (e.g. true_* variables) will be repeated
+	//Note: If you have multiple true particles, the output tree won't account for this.
+	// Currently it just saves the first true primary particle in the WCSimRootTrack TClonesArray
 	TString outfilename(filename);
 	outfilename.ReplaceAll(".root", TString::Format("_bonsai_flower%s.root", outfiletag));
 	TFile *outfile = new TFile(outfilename, "RECREATE");
@@ -158,6 +160,7 @@ int flower_with_bonsai(const char *detector, //sets the default nearest neighbou
 
 		//get true track information
 		const int ntracks = trigger->GetNtrack();
+		bool found_true_track = false;
 		for(int itrack = 0; itrack < ntracks; itrack++) {
 		  TObject *element = (trigger->GetTracks())->At(itrack);
 		  if(!element)
@@ -197,9 +200,12 @@ int flower_with_bonsai(const char *detector, //sets the default nearest neighbou
 		  if(wcsimroottrack->GetId() == 1 && wcsimroottrack->GetParenttype() == 0) {
 		    true_dir.SetXYZ(wcsimroottrack->GetDir(0), wcsimroottrack->GetDir(1), wcsimroottrack->GetDir(2));
 		    true_energy = wcsimroottrack->GetE();
+		    found_true_track = true;
 		    break;
 		  }
 		}//itrack
+		if(!found_true_track)
+		  cerr << "Couldn't find the true track! True energy & true direction in the output tree are set to default values" << endl;
 
 		// Loop over triggers in the event
 		for (int index = 0 ; index < event->GetNumberOfEvents(); index++) {
