@@ -238,7 +238,15 @@ int flower_with_bonsai(const char *detector, //sets the default nearest neighbou
 			float* bsQ_a = &bsQ[0];
 
 			if (verbose) std::cout << "Fitting event vertex with hk-BONSAI ..." << std::endl;
-			bonsai->BonsaiFit(bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB_a, bsT_a, bsQ_a);
+
+			try {
+			  bonsai->BonsaiFit(bsVertex, bsResult, bsGood, bsNsel, bsNhit, bsCAB_a, bsT_a, bsQ_a);
+			}
+			catch (int e) {
+			  std::cerr << "BONSAI threw an exception! Will fill the tree, then continue (not running FLOWER)" << std::endl;
+			  out_tree->Fill();
+			  continue;
+			}
 			if (verbose){
 			  std::cout << "Vertex found at:";
 			  for(int iv = 0; iv < 4; iv++)
