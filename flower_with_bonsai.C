@@ -288,6 +288,9 @@ int flower_with_bonsai(const char *detector, //sets the default nearest neighbou
 		event->ReInitialize();
 	} // End of loop over events
 	timer.Print();
+	cout << "Average times:"
+	     << "\tCPU   " << timer.CpuTime() / tree->GetEntries() << endl
+	     << "\tReal  " << timer.RealTime() / tree->GetEntries() << endl;
 
 	outfile->cd();
 	out_tree->Write();
