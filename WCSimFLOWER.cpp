@@ -33,16 +33,23 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool g
     fTopBottomDistanceLo = 1767;
     fTopBottomDistanceHi = 1768;
     break;
-  case kHyperK40:
+  case kHyperK40Old:
     fDarkRate = 8.4;
     fNPMTs = 38448;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20:
+  case kHyperK20Old:
     fDarkRate = 8.4;
     fNPMTs = 19462;
+    fNeighbourDistance = 145;
+    fTopBottomDistanceLo = 2670;
+    fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperKRealistic:
+    fDarkRate = 8.4;
+    fNPMTs = 19746;
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
@@ -146,12 +153,14 @@ void WCSimFLOWER::SetTopBottomDistance(float hi, float lo)
 
 WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
 {
-  if(!name.compare("HyperK") || !name.compare("HyperK_40perCent"))
-    return kHyperK40;
+  if(!name.compare("HyperK") || !name.compare("HyperK_Realistic"))
+    return kHyperKRealistic;
+  else if(!name.compare("HyperK_40perCent_Old"))
+    return kHyperK40Old;
   else if(!name.compare("SuperK"))
     return kSuperK;
-  else if (!name.compare("HyperK_20perCent"))
-    return kHyperK20;
+  else if (!name.compare("HyperK_20perCent_Old"))
+    return kHyperK20Old;
   cerr << "DetectorEnumFromString() Unknown detector name: " << name << endl;
   exit(-1);
 }
@@ -390,8 +399,10 @@ void WCSimFLOWER::GetNEff()
                                                           // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
     
     photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)];
-    if (fDetector == kHyperK20)
+    if (fDetector == kHyperK20Old)
       photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
+    else if (fDetector == kHyperKRealistic)
+      photoCoverage *= 38448/float(fNPMTs); // ratio of number of PMTs is not exactly 2
 
     // correct for scattering in water
     waterTransparency = exp(fDistanceShort[i] / fLambdaEff);
@@ -434,13 +445,14 @@ void WCSimFLOWER::CorrectEnergy()
     else
       fERec = 0.0522*fNEff - 0.46;
     break;
-  case kHyperK40:
+  case kHyperK40Old:
     if (fNEff<1320)
       fERec = 0.02360*fNEff + 0.082;
     else
       fERec = 0.02524*fNEff - 2.081;
     break;
-  case kHyperK20:
+  case kHyperKRealistic:
+  case kHyperK20Old:
     if (fNEff<701)
       // use fNEff, as normal
       fERec = 0.00000255*pow(fNEff, 2) + 0.0215*fNEff + 0.429;

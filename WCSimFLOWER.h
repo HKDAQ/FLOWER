@@ -40,7 +40,7 @@ class WCSimFLOWER {
   bool CheckNearestNeighbours();
 
  private:
-  enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20};
+  enum kDetector_t {kSuperK = 0, kHyperK40Old, kHyperK20Old, kHyperKRealistic};
 
   kDetector_t DetectorEnumFromString(std::string name);
   void CorrectHitTimes();
