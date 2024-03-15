@@ -25,6 +25,9 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool g
     fLongDuration(100),
     fShortDuration(50)
 {
+  cout << endl << "******************" << endl
+       << "Inialising FLOWER" << endl
+       << "******************" << endl;
   switch (fDetector) {
   case kSuperK:
     fDarkRate = 4.2;
@@ -95,6 +98,8 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool g
   fTimesCorrectedSorted.reserve(fNPMTs);
 
   GetNearestNeighbours(overwrite_nearest);
+
+  cout << "******************" << endl;
 }
 
 void WCSimFLOWER::SetDarkRate(float darkrate)
@@ -496,18 +501,22 @@ bool WCSimFLOWER::CheckNearestNeighbours()
     cout << count.first << "\t" << count.second << endl;
 
     if(count.first <= 2) {
-      cerr << "Some PMTs have " << count.first << "neighbours. Increase neighbour distance & try again" << endl;
+      cerr << "Some PMTs have " << count.first << " neighbours. Increase neighbour distance & try again" << endl;
       success = false;
     }
     else if(count.first >= 12) {
-      cerr << "Some PMTs have " << count.first << "neighbours. Decrease neighbour distance & try again" << endl;
+      cerr << "Some PMTs have " << count.first << " neighbours. Decrease neighbour distance & try again" << endl;
       success = false;
     }
   }
 
-  auto it = std::max_element(counts.begin(), counts.end());
-  if(it->first != 8) {
-    cerr << "Most PMTs should have 8 neighbours. Mode number of elements is " << it->first << endl;
+  std::pair<unsigned int, int> mode(*(counts.begin()));
+  for(auto const& count : counts) {
+    if(count.second > mode.second)
+      mode = count;
+  }
+  if(mode.first != 8) {
+    cerr << "Most PMTs should have 8 neighbours. Mode number of elements is " << mode.first << endl;
     success = false;
   }
   
