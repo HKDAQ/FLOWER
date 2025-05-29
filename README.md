@@ -1,3 +1,13 @@
+> [!CAUTION]
+> This repo has moved to HK gitlab at https://git.hyperk.org/hyperk/recon/FLOWER/
+>
+> Please clone this package from there.
+>
+> If you already have cloned this package, please see the migration instructions [here](https://git.hyperk.org/hyperk/wiki/-/wikis/FromGitHub#users--developers)
+>
+> Please also put new issues & merge requests in only on the HK gitlab
+
+
 # FLOWER: soFtware for LOW-Energy Reconstruction
 An energy reconstruction script for low-energy events in Hyper-Kamiokande.
 
