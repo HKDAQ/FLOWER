@@ -14,16 +14,20 @@ using std::cerr;
 
 const float WCSimFLOWER::fEffCoverages[9] = {0.4, 0.4, 0.4, 0.4, 0.4068, 0.4244, 0.4968, 0.5956, 0.67}; // from MC: coverage at theta = 5, 15, ..., 85 degree
 
-WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose)
+WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool get_npmts_from_wcsimrootgeom, bool overwrite_nearest, int verbose)
   : fLightGroupSpeed(21.58333), // speed of light in water, value from https://github.com/hyperk/hk-BONSAI/blob/d9b227dad26fb63f2bfe80f60f7f58b5a703250a/bonsai/hits.h#L5
     fLambdaEff(100*100), // scattering length in cm (based on Design Report II.2.E.1)
     fDetectorName(detectorname),
     fDetector(DetectorEnumFromString(detectorname)),
     fVerbose(verbose),
     fGeom(geom),
+    fGetNPMTsFromWCSimRootGeom(get_npmts_from_wcsimrootgeom),
     fLongDuration(100),
     fShortDuration(50)
 {
+  cout << endl << "******************" << endl
+       << "Inialising FLOWER" << endl
+       << "******************" << endl;
   switch (fDetector) {
   case kSuperK:
     fDarkRate = 4.2;
@@ -32,19 +36,28 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
     fTopBottomDistanceLo = 1767;
     fTopBottomDistanceHi = 1768;
     break;
-  case kHyperK40:
+  case kHyperK40Old:
     fDarkRate = 8.4;
     fNPMTs = 38448;
     fNeighbourDistance = 102;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
     break;
-  case kHyperK20:
+  case kHyperK20Old:
     fDarkRate = 8.4;
     fNPMTs = 19462;
     fNeighbourDistance = 145;
     fTopBottomDistanceLo = 2670;
     fTopBottomDistanceHi = 2690;
+    break;
+  case kHyperKRealistic:
+    fDarkRate = 8.4;
+    fNPMTs = 19746;
+    fNeighbourDistance = 145;
+    //note that these are wide because there is an assymmetry in the PMT positions
+    // This still won't get the next row of PMTs, which are at -3179.352000000 & +3111.524000000
+    fTopBottomDistanceLo = 3180;
+    fTopBottomDistanceHi = 3260;
     break;
   default:
     cerr << "Unknown detector name " << fDetectorName << endl;
@@ -57,7 +70,12 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   cout << "\tUsing default dark rate " << fDarkRate << " kHz" << endl;
   fDarkRate /= 1000000; //convert to per ns
 
-  cout << "\tUsing default NPMTs " << fNPMTs << endl;
+  if(fGetNPMTsFromWCSimRootGeom) {
+    fNPMTs = fGeom->GetWCNumPMT();
+    cout << "\tUsing NPMTs from input WCSimRootGeom " << fNPMTs << endl;
+  }
+  else
+    cout << "\tUsing default NPMTs " << fNPMTs << endl;
   
   cout << "\tAssumming all PMTs are working" << endl;
   fNWorkingPMTs = fNPMTs;
@@ -82,6 +100,8 @@ WCSimFLOWER::WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool o
   fTimesCorrectedSorted.reserve(fNPMTs);
 
   GetNearestNeighbours(overwrite_nearest);
+
+  cout << "******************" << endl;
 }
 
 void WCSimFLOWER::SetDarkRate(float darkrate)
@@ -140,12 +160,14 @@ void WCSimFLOWER::SetTopBottomDistance(float hi, float lo)
 
 WCSimFLOWER::kDetector_t WCSimFLOWER::DetectorEnumFromString(std::string name)
 {
-  if(!name.compare("HyperK") || !name.compare("HyperK_40perCent"))
-    return kHyperK40;
+  if(!name.compare("HyperK") || !name.compare("HyperK_Realistic"))
+    return kHyperKRealistic;
+  else if(!name.compare("HyperK_40perCent_Old"))
+    return kHyperK40Old;
   else if(!name.compare("SuperK"))
     return kSuperK;
-  else if (!name.compare("HyperK_20perCent"))
-    return kHyperK20;
+  else if (!name.compare("HyperK_20perCent_Old"))
+    return kHyperK20Old;
   cerr << "DetectorEnumFromString() Unknown detector name: " << name << endl;
   exit(-1);
 }
@@ -265,7 +287,15 @@ void WCSimFLOWER::GetNearestNeighbours(bool overwrite_root_file)
     std::vector<int> * neighbours = 0;
     t->SetBranchAddress("neighbours", &neighbours);
     //loop over tree
-    for(long ipmt = 0; ipmt < t->GetEntries(); ipmt++) {
+    const int n_entries = t->GetEntries();
+    if(n_entries != fNPMTs) {
+      std::cerr << "Mismatch between number of PMTs FLOWER is assuming: " << fNPMTs
+		<< " and number of PMTs in the previously calculated nearest neighbours file: "
+		<< n_entries
+		<< " Exiting..." << endl;
+      exit(-1);
+    }
+    for(long ipmt = 0; ipmt < n_entries; ipmt++) {
       t->GetEntry(ipmt);
       fNeighbours[tubeID] = *neighbours;
       if(fVerbose > 2)
@@ -384,8 +414,10 @@ void WCSimFLOWER::GetNEff()
                                                           // ... the coverage to the most likely value of 0.4 (i.e. theta < 40 degrees)
     
     photoCoverage = 1 / WCSimFLOWER::fEffCoverages[int(theta/10)];
-    if (fDetector == kHyperK20)
+    if (fDetector == kHyperK20Old)
       photoCoverage *= 38448/float(19462); // ratio of number of PMTs is not exactly 2
+    else if (fDetector == kHyperKRealistic)
+      photoCoverage *= 38448/float(fNPMTs); // ratio of number of PMTs is not exactly 2
 
     // correct for scattering in water
     waterTransparency = exp(fDistanceShort[i] / fLambdaEff);
@@ -428,13 +460,14 @@ void WCSimFLOWER::CorrectEnergy()
     else
       fERec = 0.0522*fNEff - 0.46;
     break;
-  case kHyperK40:
+  case kHyperK40Old:
     if (fNEff<1320)
       fERec = 0.02360*fNEff + 0.082;
     else
       fERec = 0.02524*fNEff - 2.081;
     break;
-  case kHyperK20:
+  case kHyperKRealistic:
+  case kHyperK20Old:
     if (fNEff<701)
       // use fNEff, as normal
       fERec = 0.00000255*pow(fNEff, 2) + 0.0215*fNEff + 0.429;
@@ -456,4 +489,46 @@ TString WCSimFLOWER::GetFLOWERDataDir()
     dir = TString::Format("%s/data/", gSystem->Getenv("FLOWERDIR"));
   }
   return dir;
+}
+
+bool WCSimFLOWER::CheckNearestNeighbours()
+{
+  //count the number of occurences of each number of neighbours
+  std::map<unsigned int,int> counts;
+  for(auto const& neighbours : fNeighbours) {
+    const int n_neighbours = neighbours.second.size();
+    std::map<unsigned int,int>::iterator it(counts.find(n_neighbours));
+    if(it != counts.end())
+      it->second++;
+    else
+      counts[n_neighbours] = 1;
+  }//fNeighbours loop
+
+  //print
+  bool success = true;
+  cout << "Check number of neighbours" << endl;
+  for(auto const& count : counts) {
+    cout << count.first << "\t" << count.second << endl;
+
+    if(count.first <= 2) {
+      cerr << "Some PMTs have " << count.first << " neighbours. Increase neighbour distance & try again" << endl;
+      success = false;
+    }
+    else if(count.first >= 12) {
+      cerr << "Some PMTs have " << count.first << " neighbours. Decrease neighbour distance & try again" << endl;
+      success = false;
+    }
+  }
+
+  std::pair<unsigned int, int> mode(*(counts.begin()));
+  for(auto const& count : counts) {
+    if(count.second > mode.second)
+      mode = count;
+  }
+  if(mode.first != 8) {
+    cerr << "Most PMTs should have 8 neighbours. Mode number of elements is " << mode.first << endl;
+    success = false;
+  }
+  
+  return success;
 }

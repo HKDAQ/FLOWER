@@ -19,10 +19,12 @@ using std::vector;
 class WCSimFLOWER {
 
  public:
-  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool overwrite_nearest, int verbose);
+  WCSimFLOWER(const char * detectorname, WCSimRootGeom * geom, bool get_npmts_from_wcsimrootgeom, bool overwrite_nearest, int verbose);
   ~WCSimFLOWER() {};
 
   float GetEnergy(std::vector<float> times, std::vector<int> tubeIds, float * vertex);
+  float RetrieveNEff() const {return fNEff;} ///< Get the effective number of hits. GetEnergy() should have already been called, in order to fill fNeff with a sensible value
+  float RetrieveNEff2() const {return fNEff2;} ///< Get the effective number of hits (second defintion). GetEnergy() should have already been called, in order to fill fNEff2 with a sensible value
 
   //override default values with these methods
   void SetDarkRate(float darkrate);
@@ -35,8 +37,10 @@ class WCSimFLOWER {
 
   TString GetFLOWERDataDir();
 
+  bool CheckNearestNeighbours();
+
  private:
-  enum kDetector_t {kSuperK = 0, kHyperK40, kHyperK20};
+  enum kDetector_t {kSuperK = 0, kHyperK40Old, kHyperK20Old, kHyperKRealistic};
 
   kDetector_t DetectorEnumFromString(std::string name);
   void CorrectHitTimes();
@@ -60,7 +64,8 @@ class WCSimFLOWER {
   int       fVerbose;
 
   WCSimRootGeom * fGeom;
-
+  bool fGetNPMTsFromWCSimRootGeom;
+  
   int    fNDigits;
   int    fNMaxShort;
   int    fNMaxLong;
